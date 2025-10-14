@@ -1,3 +1,4 @@
+backend/labels/
 backend/.env
 backend/__pycache__/
 .vscode/
