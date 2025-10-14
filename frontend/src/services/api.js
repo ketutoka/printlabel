@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: 'http://localhost:8002',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8002',
   timeout: 10000,
 })
 
@@ -37,7 +37,7 @@ api.interceptors.response.use(
 // Helper function to get image URL with authorization
 export const getImageUrl = (path) => {
   const token = localStorage.getItem('token')
-  const baseUrl = 'http://localhost:8002'
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8002'
   if (token) {
     return `${baseUrl}${path}?token=${encodeURIComponent(token)}`
   }

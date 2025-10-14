@@ -45,6 +45,42 @@ npm install
 npm run dev  # Runs on port 3002
 ```
 
+## Production Deployment
+
+### Frontend Production Setup
+```bash
+cd frontend
+
+# Install PM2 globally (if not installed)
+npm install -g pm2
+
+# Option 1: Automated deployment
+deploy-production.bat    # Windows
+# or
+bash deploy-production.sh  # Linux
+
+# Option 2: Manual deployment
+npm ci --production=false
+npm run build
+pm2 start ecosystem.config.js --env production
+pm2 save
+
+# Useful PM2 commands
+pm2 status                    # Show status
+pm2 logs printlabel-frontend  # Show logs
+pm2 restart printlabel-frontend # Restart
+pm2 stop printlabel-frontend  # Stop
+```
+
+### Environment Configuration
+Create `.env.production` and update:
+```
+VITE_API_BASE_URL=http://your-production-server:8002
+```
+
+### Nginx Setup (Optional)
+Copy `nginx.conf` to your nginx sites and update domain name.
+
 ### Database
 Pastikan PostgreSQL sudah terinstall dan running.
 Update connection string di `backend/.env`

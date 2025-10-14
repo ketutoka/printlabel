@@ -1,0 +1,16 @@
+[Unit]
+Description=Print Label Frontend
+After=network.target
+
+[Service]
+Type=forking
+User=www-data
+WorkingDirectory=/path/to/your/printlabel/frontend
+ExecStart=/usr/local/bin/pm2 start ecosystem.config.js --env production
+ExecReload=/usr/local/bin/pm2 restart printlabel-frontend
+ExecStop=/usr/local/bin/pm2 stop printlabel-frontend
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
