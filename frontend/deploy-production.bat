@@ -29,7 +29,7 @@ pm2 delete printlabel-frontend 2>nul
 
 REM Start with PM2
 echo 🚀 Starting with PM2...
-pm2 start ecosystem.config.js --env production
+pm2 start ecosystem.config.cjs --env production
 
 REM Save PM2 configuration
 echo 💾 Saving PM2 configuration...

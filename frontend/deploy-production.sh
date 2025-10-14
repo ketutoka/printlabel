@@ -28,7 +28,7 @@ pm2 delete printlabel-frontend 2>/dev/null || true
 
 # Start with PM2
 echo "🚀 Starting with PM2..."
-pm2 start ecosystem.config.js --env production
+pm2 start ecosystem.config.cjs --env production
 
 # Save PM2 configuration
 echo "💾 Saving PM2 configuration..."

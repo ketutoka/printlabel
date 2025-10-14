@@ -62,7 +62,7 @@ bash deploy-production.sh  # Linux
 # Option 2: Manual deployment
 npm ci --production=false
 npm run build
-pm2 start ecosystem.config.js --env production
+pm2 start ecosystem.config.cjs --env production
 pm2 save
 
 # Useful PM2 commands
