@@ -9,6 +9,10 @@ REM Install dependencies
 echo 📦 Installing dependencies...
 npm ci --production=false
 
+REM Install terser for minification (if not already installed)
+echo 🔧 Installing terser for minification...
+npm install --save-dev terser
+
 REM Build for production
 echo 🔨 Building for production...
 npm run build

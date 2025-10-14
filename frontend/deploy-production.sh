@@ -10,6 +10,10 @@ mkdir -p logs
 echo "📦 Installing dependencies..."
 npm ci --production=false
 
+# Install terser for minification (if not already installed)
+echo "🔧 Installing terser for minification..."
+npm install --save-dev terser
+
 # Build for production
 echo "🔨 Building for production..."
 npm run build
