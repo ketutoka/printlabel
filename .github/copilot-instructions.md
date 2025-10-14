@@ -31,14 +31,14 @@ python -m venv venv
 venv\Scripts\activate  # Windows specific
 pip install -r requirements.txt
 # Copy .env.example to .env and configure
-uvicorn main:app --reload  # Runs on port 8000
+uvicorn main:app --reload  # Runs on port 8002
 ```
 
 #### Frontend Setup & Run  
 ```bash
 cd frontend
 npm install
-npm run dev  # Runs on port 5173, proxies /api to backend:8000
+npm run dev  # Runs on port 3002, proxies /api to backend:8002
 ```
 
 #### Database Initialization
@@ -94,9 +94,9 @@ else { /* handle result.error */ }
 ## Integration Points
 
 ### Cross-Origin Setup
-- Backend CORS allows `localhost:3000` and `localhost:5173`
-- Frontend Vite proxy: `/api/*` → `localhost:8000`
-- API base URL: `http://localhost:8000`
+- Backend CORS allows `localhost:3002` and `localhost:5173`
+- Frontend Vite proxy: `/api/*` → `localhost:8002`
+- API base URL: `http://localhost:8002`
 
 ### Email Configuration
 - SMTP settings in `.env` for password reset functionality

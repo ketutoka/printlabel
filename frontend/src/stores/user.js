@@ -35,6 +35,11 @@ export const useUserStore = defineStore('user', {
         // Get user info
         await this.getCurrentUser()
         
+        // Load user's labels after successful login
+        const { useLabelStore } = await import('./label')
+        const labelStore = useLabelStore()
+        await labelStore.fetchLabels()
+        
         return { success: true }
       } catch (error) {
         this.error = error.response?.data?.detail || 'Login gagal'
@@ -92,6 +97,11 @@ export const useUserStore = defineStore('user', {
       this.error = null
       localStorage.removeItem('token')
       delete api.defaults.headers.common['Authorization']
+      
+      // Clear labels when logout
+      const { useLabelStore } = require('./label')
+      const labelStore = useLabelStore()
+      labelStore.clearLabels()
     },
 
     clearError() {

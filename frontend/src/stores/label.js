@@ -43,10 +43,46 @@ export const useLabelStore = defineStore('label', {
     },
 
     async getPreviewUrl(labelId) {
-      return getImageUrl(`/labels/preview/${labelId}`)
+      try {
+        const token = localStorage.getItem('token')
+        const response = await fetch(`http://localhost:8002/labels/preview/${labelId}?token=${encodeURIComponent(token)}`)
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch image')
+        }
+        
+        const blob = await response.blob()
+        return URL.createObjectURL(blob)
+      } catch (error) {
+        console.error('Error fetching preview:', error)
+        throw error
+      }
+    },
+
+    async fetchLabels() {
+      this.loading = true
+      this.error = null
+      
+      try {
+        const response = await api.get('/labels')
+        this.labels = response.data || []
+        return { success: true, data: response.data }
+      } catch (error) {
+        this.error = error.response?.data?.detail || 'Gagal memuat daftar label'
+        console.error('Error fetching labels:', error)
+        return { success: false, error: this.error }
+      } finally {
+        this.loading = false
+      }
     },
 
     clearError() {
+      this.error = null
+    },
+
+    clearLabels() {
+      this.labels = []
+      this.currentLabel = null
       this.error = null
     },
 

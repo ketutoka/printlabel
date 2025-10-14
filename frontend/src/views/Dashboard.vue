@@ -60,10 +60,23 @@
           <template #header>
             <div class="card-header">
               <span>🕒 Label Terbaru</span>
+              <el-button 
+                type="primary" 
+                size="small" 
+                @click="refreshLabels"
+                :loading="labelStore.loading"
+              >
+                🔄 Refresh
+              </el-button>
             </div>
           </template>
           
-          <div v-if="labelStore.labels.length === 0" class="empty-state">
+          <div v-if="labelStore.loading && labelStore.labels.length === 0" class="loading-state">
+            <el-icon class="is-loading"><Loading /></el-icon>
+            <p>Memuat daftar label...</p>
+          </div>
+          
+          <div v-else-if="labelStore.labels.length === 0" class="empty-state">
             <el-empty description="Belum ada label yang dibuat">
               <el-button type="primary" @click="$router.push('/create-label')">
                 Buat Label Pertama
@@ -151,7 +164,12 @@
         </div>
         
         <div class="label-image-container">
+          <div v-if="!previewImageUrl" class="loading-placeholder">
+            <el-icon class="is-loading"><Loading /></el-icon>
+            <p>Memuat preview...</p>
+          </div>
           <img 
+            v-else
             :src="previewImageUrl" 
             alt="Label Preview"
             class="label-preview-image"
@@ -240,18 +258,19 @@ const printLabel = async (label) => {
 const previewLabel = async (label) => {
   try {
     previewLabelData.value = label
+    previewImageUrl.value = '' // Reset image URL to show loading
+    showLabelPreview.value = true
+    
+    ElMessage.info('Memuat preview label...')
+    
+    // Get preview URL with proper authentication
     previewImageUrl.value = await labelStore.getPreviewUrl(label.id)
     
-    // Add authorization header to the image URL
-    const token = userStore.token
-    if (token) {
-      previewImageUrl.value += `?t=${Date.now()}` // Cache busting
-    }
-    
-    showLabelPreview.value = true
-    ElMessage.success(`Preview label ${label.shipping_code}`)
+    ElMessage.success(`Preview label ${label.shipping_code} berhasil dimuat`)
   } catch (error) {
+    console.error('Preview error:', error)
     ElMessage.error('Gagal memuat preview label')
+    showLabelPreview.value = false
   }
 }
 
@@ -259,10 +278,28 @@ const handleImageError = () => {
   ElMessage.error('Gagal memuat gambar label')
 }
 
+const refreshLabels = async () => {
+  try {
+    const result = await labelStore.fetchLabels()
+    if (result.success) {
+      ElMessage.success('Daftar label berhasil diperbarui')
+    } else {
+      ElMessage.error('Gagal memperbarui daftar label')
+    }
+  } catch (error) {
+    ElMessage.error('Gagal memperbarui daftar label')
+  }
+}
+
 onMounted(() => {
   // Load user data if not already loaded
   if (!userStore.user && userStore.token) {
     userStore.getCurrentUser()
+  }
+  
+  // Load labels if user is authenticated and labels are empty
+  if (userStore.isAuthenticated && labelStore.labels.length === 0) {
+    labelStore.fetchLabels()
   }
 })
 </script>
@@ -290,6 +327,9 @@ onMounted(() => {
 .card-header {
   font-weight: bold;
   color: #409EFF;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .card-content {
@@ -350,5 +390,33 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   width: 100%;
+}
+
+.loading-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #999;
+}
+
+.loading-placeholder .el-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #999;
+}
+
+.loading-state .el-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
 }
 </style>

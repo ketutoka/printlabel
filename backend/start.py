@@ -52,11 +52,11 @@ if __name__ == "__main__":
         
         print("✅ Environment check passed")
         print("🚀 Starting FastAPI server...")
-        print("📍 Server will be available at: http://localhost:8000")
-        print("📖 API docs will be available at: http://localhost:8000/docs")
+        print("📍 Server will be available at: http://localhost:8002")
+        print("📖 API docs will be available at: http://localhost:8002/docs")
         print("=" * 50)
         
-        uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+        uvicorn.run(app, host="0.0.0.0", port=8002, reload=True)
         
     except ImportError as e:
         print(f"❌ Import error: {e}")

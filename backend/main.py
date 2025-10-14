@@ -25,7 +25,7 @@ app = FastAPI(title="Print Label API", version="1.0.0")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["http://localhost:3002", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -172,10 +172,37 @@ def get_label_for_print(
 @app.get("/labels/preview/{label_id}")
 def preview_label_image(
     label_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    token: Optional[str] = None,
+    db: Session = Depends(get_db)
 ):
     from crud import get_label
+    from jose import JWTError, jwt
+    from auth import SECRET_KEY, ALGORITHM
+    from crud import get_user_by_email
+    
+    current_user = None
+    
+    # Try to get token from query parameter first
+    if token:
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            email: str = payload.get("sub")
+            if email:
+                current_user = get_user_by_email(db, email)
+        except JWTError:
+            pass
+    
+    # If no token in query, try to get from header
+    if not current_user:
+        try:
+            from fastapi import Request
+            # This is a fallback, but for image requests we'll rely on token parameter
+            pass
+        except:
+            pass
+    
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required")
     
     label = get_label(db, label_id, current_user.id)
     if not label:
@@ -193,4 +220,4 @@ def preview_label_image(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8002)

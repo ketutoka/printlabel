@@ -244,12 +244,15 @@ const createAnotherLabel = () => {
 const previewActualLabel = async () => {
   try {
     if (generatedLabel.value && generatedLabel.value.id) {
+      ElMessage.info('Memuat preview label asli...')
+      
       actualPreviewUrl.value = await labelStore.getPreviewUrl(generatedLabel.value.id)
-      actualPreviewUrl.value += `?t=${Date.now()}` // Cache busting
       showActualPreview.value = true
-      ElMessage.success('Menampilkan preview label asli')
+      
+      ElMessage.success('Preview label asli berhasil dimuat')
     }
   } catch (error) {
+    console.error('Preview error:', error)
     ElMessage.error('Gagal memuat preview label asli')
   }
 }

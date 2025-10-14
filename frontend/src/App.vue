@@ -26,9 +26,11 @@
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from './stores/user'
+import { useLabelStore } from './stores/label'
 
 const router = useRouter()
 const userStore = useUserStore()
+const labelStore = useLabelStore()
 
 const isAuthenticated = computed(() => userStore.isAuthenticated)
 
@@ -40,7 +42,15 @@ const logout = () => {
 onMounted(() => {
   // Check if user is logged in
   if (userStore.token && !userStore.user) {
-    userStore.getCurrentUser()
+    userStore.getCurrentUser().then(() => {
+      // Load labels after user info is loaded
+      if (userStore.isAuthenticated) {
+        labelStore.fetchLabels()
+      }
+    })
+  } else if (userStore.isAuthenticated) {
+    // If user is already loaded, just load labels
+    labelStore.fetchLabels()
   }
 })
 </script>

@@ -23,6 +23,7 @@ cd backend
 
 # Option 1: Quick setup (Windows)
 setup.bat
+run-server.bat
 
 # Option 2: Manual setup
 python -m venv .venv
@@ -30,14 +31,18 @@ python -m venv .venv
 pip install -r requirements.txt
 copy .env.example .env
 # Edit .env with your database settings
-python start.py
+
+# Start server (choose one):
+python start.py                    # Recommended - with environment checks
+uvicorn main:app --reload --port 8002  # Direct uvicorn
+run-server.bat                     # Using batch file
 ```
 
 ### Frontend (Vue.js)
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev  # Runs on port 3002
 ```
 
 ### Database
