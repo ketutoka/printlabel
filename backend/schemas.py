@@ -1,11 +1,19 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, validator
 from datetime import datetime
 from typing import Optional
 
 class UserCreate(BaseModel):
     name: str
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=6, max_length=70, description="Password must be 6-70 characters")
+    
+    @validator('password')
+    def validate_password_length(cls, v):
+        # Ensure password won't exceed bcrypt's 72 byte limit when encoded
+        password_bytes = v.encode('utf-8')
+        if len(password_bytes) > 70:  # Leave some margin for safety
+            raise ValueError('Password is too long. Please use a shorter password.')
+        return v
 
 class UserResponse(BaseModel):
     id: int
