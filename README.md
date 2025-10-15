@@ -85,11 +85,27 @@ Example nginx configuration for port 8082:
 ```nginx
 server {
     listen 8082;
-    server_name _;
+    server_name _ your-domain.com;
 
-    # Frontend
-    location / {
-        proxy_pass http://localhost:3002;
+    # FastAPI Documentation - Exact match (HIGHEST PRIORITY)
+    location = /api/docs {
+        proxy_pass http://localhost:8002/docs;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /api/redoc {
+        proxy_pass http://localhost:8002/redoc;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location = /api/openapi.json {
+        proxy_pass http://localhost:8002/openapi.json;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -104,10 +120,20 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
+
+    # Frontend
+    location / {
+        proxy_pass http://localhost:3002;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
 }
 ```
 
 Access your app at: `http://your-server:8082`
+Documentation at: `http://your-server:8082/api/docs`
 
 ### Database
 Pastikan PostgreSQL sudah terinstall dan running.
