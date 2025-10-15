@@ -20,7 +20,13 @@ load_dotenv()
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Print Label API", version="1.0.0")
+app = FastAPI(
+    title="Print Label API", 
+    version="1.0.0",
+    openapi_url="/openapi.json",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
 
 # CORS middleware
 app.add_middleware(
