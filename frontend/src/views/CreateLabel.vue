@@ -158,9 +158,10 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useLabelStore } from '../stores/label'
 import { useUserStore } from '../stores/user'
+import api from '../services/api'
 
 const router = useRouter()
 const labelStore = useLabelStore()
@@ -220,17 +221,116 @@ const resetForm = () => {
 
 const printLabel = async () => {
   try {
-    // In real implementation, this would send to thermal printer
-    // For now, we'll simulate printing
-    ElMessage.success(`Label ${generatedLabel.value.shipping_code} berhasil dicetak!`)
-    showPreview.value = false
-    
-    // Redirect to dashboard after successful print
-    setTimeout(() => {
-      router.push('/dashboard')
-    }, 1000)
+    if (!generatedLabel.value) {
+      ElMessage.error('Tidak ada label untuk dicetak')
+      return
+    }
+
+    // Show print options dialog
+    ElMessageBox.confirm(
+      'Pilih cara mencetak label:',
+      'Opsi Printing',
+      {
+        distinguishCancelAndClose: true,
+        confirmButtonText: '🖨️ Print via Browser',
+        cancelButtonText: '⬇️ Download Gambar',
+        type: 'info',
+      }
+    ).then(() => {
+      // Print via browser
+      printViaBrowser(generatedLabel.value)
+    }).catch((action) => {
+      if (action === 'cancel') {
+        // Download image
+        downloadLabelImage(generatedLabel.value)
+      }
+    })
   } catch (error) {
     ElMessage.error('Gagal mencetak label')
+  }
+}
+
+const printViaBrowser = async (label) => {
+  try {
+    // Get the preview image URL
+    const token = userStore.token
+    const imageUrl = `${api.defaults.baseURL}/labels/preview/${label.id}?token=${token}`
+    
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank')
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Print Label - ${label.shipping_code}</title>
+        <style>
+          @page {
+            margin: 0;
+            size: 58mm auto;
+          }
+          body {
+            margin: 0;
+            padding: 5mm;
+            font-family: Arial, sans-serif;
+          }
+          img {
+            width: 100%;
+            height: auto;
+            max-width: 48mm;
+          }
+          @media print {
+            body {
+              padding: 0;
+            }
+            img {
+              max-width: 58mm;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <img src="${imageUrl}" alt="Label ${label.shipping_code}" onload="window.print(); window.close();" />
+      </body>
+      </html>
+    `)
+    printWindow.document.close()
+    
+    ElMessage.success(`Label ${label.shipping_code} dikirim ke printer!`)
+    
+    // Close preview and redirect after successful print
+    showPreview.value = false
+    setTimeout(() => {
+      router.push('/dashboard')
+    }, 1500)
+  } catch (error) {
+    ElMessage.error('Gagal mencetak label')
+    console.error('Print error:', error)
+  }
+}
+
+const downloadLabelImage = async (label) => {
+  try {
+    const token = userStore.token
+    const imageUrl = `${api.defaults.baseURL}/labels/preview/${label.id}?token=${token}`
+    
+    // Create download link
+    const link = document.createElement('a')
+    link.href = imageUrl
+    link.download = `label_${label.shipping_code}.png`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    ElMessage.success(`Label ${label.shipping_code} berhasil didownload!`)
+    
+    // Close preview and redirect after download
+    showPreview.value = false
+    setTimeout(() => {
+      router.push('/dashboard')
+    }, 1500)
+  } catch (error) {
+    ElMessage.error('Gagal download label')
+    console.error('Download error:', error)
   }
 }
 
