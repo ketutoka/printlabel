@@ -25,7 +25,7 @@ app = FastAPI(title="Print Label API", version="1.0.0")
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3002", "http://localhost:5173"],
+    allow_origins=["http://localhost:3002", "http://localhost:5173", "http://localhost:8082", "*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

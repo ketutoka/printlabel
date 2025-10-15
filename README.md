@@ -75,11 +75,39 @@ pm2 stop printlabel-frontend  # Stop
 ### Environment Configuration
 Create `.env.production` and update:
 ```
-VITE_API_BASE_URL=http://your-production-server:8002
+VITE_API_BASE_URL=/api
+VITE_APP_TITLE=Print Label - Production
+VITE_APP_ENV=production
 ```
 
-### Nginx Setup (Optional)
-Copy `nginx.conf` to your nginx sites and update domain name.
+### Nginx Setup
+Example nginx configuration for port 8082:
+```nginx
+server {
+    listen 8082;
+    server_name _;
+
+    # Frontend
+    location / {
+        proxy_pass http://localhost:3002;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Backend API - Strip /api prefix
+    location /api/ {
+        proxy_pass http://localhost:8002/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Access your app at: `http://your-server:8082`
 
 ### Database
 Pastikan PostgreSQL sudah terinstall dan running.

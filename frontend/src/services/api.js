@@ -38,10 +38,14 @@ api.interceptors.response.use(
 export const getImageUrl = (path) => {
   const token = localStorage.getItem('token')
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8002'
+  
+  // Handle relative URLs for production
+  const fullUrl = baseUrl.startsWith('/') ? `${window.location.origin}${baseUrl}` : baseUrl
+  
   if (token) {
-    return `${baseUrl}${path}?token=${encodeURIComponent(token)}`
+    return `${fullUrl}${path}?token=${encodeURIComponent(token)}`
   }
-  return `${baseUrl}${path}`
+  return `${fullUrl}${path}`
 }
 
 export default api

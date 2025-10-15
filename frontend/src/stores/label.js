@@ -46,7 +46,11 @@ export const useLabelStore = defineStore('label', {
       try {
         const token = localStorage.getItem('token')
         const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8002'
-        const response = await fetch(`${baseUrl}/labels/preview/${labelId}?token=${encodeURIComponent(token)}`)
+        
+        // Handle relative URLs for production
+        const fullUrl = baseUrl.startsWith('/') ? `${window.location.origin}${baseUrl}` : baseUrl
+        
+        const response = await fetch(`${fullUrl}/labels/preview/${labelId}?token=${encodeURIComponent(token)}`)
         
         if (!response.ok) {
           throw new Error('Failed to fetch image')
