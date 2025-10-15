@@ -5,6 +5,13 @@ export default defineConfig({
   plugins: [vue()],
   server: {
     port: 3002,
+    host: '0.0.0.0',
+    allowedHosts: [
+      'printlabel.aberaharja.my.id',
+      'localhost',
+      '127.0.0.1',
+      '0.0.0.0'
+    ],
     proxy: {
       '/api': {
         target: 'http://localhost:8002',
@@ -15,7 +22,13 @@ export default defineConfig({
   },
   preview: {
     port: 3002,
-    host: '0.0.0.0'
+    host: '0.0.0.0',
+    allowedHosts: [
+      'printlabel.aberaharja.my.id',
+      'localhost',
+      '127.0.0.1',
+      '0.0.0.0'
+    ]
   },
   build: {
     outDir: 'dist',
