@@ -25,7 +25,11 @@ app = FastAPI(
     version="1.0.0",
     openapi_url="/openapi.json",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    servers=[
+        {"url": "/api", "description": "API Server via Nginx Proxy"},
+        {"url": "/", "description": "Direct API Server"}
+    ]
 )
 
 # CORS middleware
