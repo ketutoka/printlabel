@@ -48,12 +48,12 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/api")
+@app.get("/")
 def read_root():
     return {"message": "Print Label API is running"}
 
 # Auth endpoints
-@app.post("/api/auth/register", response_model=UserResponse)
+@app.post("/auth/register", response_model=UserResponse)
 def register(user: UserCreate, db: Session = Depends(get_db)):
     from crud import create_user, get_user_by_email
     
@@ -67,7 +67,7 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     db_user = create_user(db, user)
     return UserResponse(id=db_user.id, name=db_user.name, email=db_user.email)
 
-@app.post("/api/auth/login")
+@app.post("/auth/login")
 def login(login_data: UserLogin, db: Session = Depends(get_db)):
     user = authenticate_user(db, login_data.email, login_data.password)
     if not user:
@@ -83,7 +83,7 @@ def login(login_data: UserLogin, db: Session = Depends(get_db)):
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-@app.post("/api/auth/reset-password")
+@app.post("/auth/reset-password")
 def reset_password(email: str, db: Session = Depends(get_db)):
     from crud import get_user_by_email
     from email_service import send_reset_email
@@ -98,7 +98,7 @@ def reset_password(email: str, db: Session = Depends(get_db)):
     
     return {"message": "Reset password email sent"}
 
-@app.get("/api/auth/me", response_model=UserResponse)
+@app.get("/auth/me", response_model=UserResponse)
 def get_current_user_profile(current_user: User = Depends(get_current_user)):
     return UserResponse(
         id=current_user.id,
@@ -107,7 +107,7 @@ def get_current_user_profile(current_user: User = Depends(get_current_user)):
     )
 
 # Label endpoints
-@app.post("/api/labels/generate", response_model=LabelResponse)
+@app.post("/labels/generate", response_model=LabelResponse)
 def generate_label(
     label: LabelCreate, 
     db: Session = Depends(get_db),
@@ -137,7 +137,7 @@ def generate_label(
         created_at=db_label.created_at
     )
 
-@app.get("/api/labels", response_model=list[LabelResponse])
+@app.get("/labels", response_model=list[LabelResponse])
 def get_user_labels(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -156,7 +156,7 @@ def get_user_labels(
         for label in labels
     ]
 
-@app.get("/api/labels/print/{label_id}")
+@app.get("/labels/print/{label_id}")
 def get_label_for_print(
     label_id: int,
     db: Session = Depends(get_db),
@@ -176,7 +176,7 @@ def get_label_for_print(
         "qr_data": label.shipping_code
     }
 
-@app.get("/api/labels/preview/{label_id}")
+@app.get("/labels/preview/{label_id}")
 def preview_label_image(
     label_id: int,
     token: Optional[str] = None,
