@@ -6,3 +6,4 @@ backend/__pycache__/
 frontend/.env
 frontend/node_modules/
 frontend/dist/
+frontend/logs/
