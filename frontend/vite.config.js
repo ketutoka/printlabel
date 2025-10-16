@@ -7,7 +7,8 @@ export default defineConfig({
     port: 3002,
     host: '0.0.0.0',
     allowedHosts: [
-      'printlabel.aberaharja.my.id',
+      'label.aberaharja.my.id',
+      'label1.aberaharja.my.id',
       'localhost',
       '127.0.0.1',
       '0.0.0.0'
@@ -24,7 +25,8 @@ export default defineConfig({
     port: 3002,
     host: '0.0.0.0',
     allowedHosts: [
-      'printlabel.aberaharja.my.id',
+      'label.aberaharja.my.id',
+      'label1.aberaharja.my.id',
       'localhost',
       '127.0.0.1',
       '0.0.0.0'
