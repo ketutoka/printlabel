@@ -36,11 +36,17 @@
             <el-form-item label="Resi" prop="shipping_code">
               <el-input
                 v-model="labelForm.shipping_code"
-                placeholder="Masukkan kode pengiriman (contoh: PKG001)"
+                placeholder="Scan QR Code/Barcode atau ketik manual"
                 prefix-icon="DocumentCopy"
               >
                 <template #append>
-                  <el-button @click="generateShippingCode">Generate</el-button>
+                  <el-button 
+                    type="primary" 
+                    @click="openScanner"
+                    icon="CameraFilled"
+                  >
+                    Scan
+                  </el-button>
                 </template>
               </el-input>
             </el-form-item>
@@ -75,6 +81,13 @@
         </el-card>
       </el-col>
     </el-row>
+
+    <!-- QR Scanner Component -->
+    <QRScanner 
+      ref="qrScannerRef"
+      @scan-success="handleScanSuccess"
+      @scan-error="handleScanError"
+    />
 
     <!-- Preview Modal -->
     <el-dialog
@@ -174,12 +187,14 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useLabelStore } from '../stores/label'
 import { useUserStore } from '../stores/user'
 import api from '../services/api'
+import QRScanner from '../components/QRScanner.vue'
 
 const router = useRouter()
 const labelStore = useLabelStore()
 const userStore = useUserStore()
 
 const labelFormRef = ref()
+const qrScannerRef = ref()
 const showPreview = ref(false)
 const showActualPreview = ref(false)
 const generatedLabel = ref(null)
@@ -209,13 +224,36 @@ const rules = {
   shipping_code: [
     { required: true, message: 'Kode pengiriman harus diisi', trigger: 'blur' },
     { min: 3, message: 'Kode pengiriman minimal 3 karakter', trigger: 'blur' },
-    { max: 20, message: 'Kode pengiriman maksimal 20 karakter', trigger: 'blur' }
+    { max: 50, message: 'Kode pengiriman maksimal 50 karakter', trigger: 'blur' },
+    { 
+      pattern: /^[A-Za-z0-9\-_#/]+$/, 
+      message: 'Kode pengiriman hanya boleh berisi huruf, angka, -, _, #, /', 
+      trigger: 'blur' 
+    }
   ]
 }
 
-const generateShippingCode = () => {
-  const timestamp = Date.now().toString().slice(-6)
-  labelForm.shipping_code = `PKG${timestamp}`
+// QR Scanner functions
+const openScanner = () => {
+  if (qrScannerRef.value) {
+    qrScannerRef.value.startScanning()
+  } else {
+    ElMessage.error('Scanner tidak tersedia')
+  }
+}
+
+const handleScanSuccess = (scannedCode) => {
+  labelForm.shipping_code = scannedCode
+  ElMessage.success(`Berhasil scan kode: ${scannedCode}`)
+  
+  // Clear any validation errors
+  if (labelFormRef.value) {
+    labelFormRef.value.clearValidate(['shipping_code'])
+  }
+}
+
+const handleScanError = (error) => {
+  ElMessage.error(`Error scanning: ${error}`)
 }
 
 const handleCreateLabel = async () => {

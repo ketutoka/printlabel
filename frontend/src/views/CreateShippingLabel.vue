@@ -72,9 +72,20 @@
         <el-form-item label="Kode Resi (Opsional)" prop="shipping_code">
           <el-input 
             v-model="shippingForm.shipping_code" 
-            placeholder="Kosongkan jika tidak ada kode resi"
+            placeholder="Scan QR Code/Barcode atau ketik manual"
             clearable
-          />
+          >
+            <template #append>
+              <el-button 
+                type="primary" 
+                @click="openScanner"
+                icon="CameraFilled"
+                size="small"
+              >
+                Scan
+              </el-button>
+            </template>
+          </el-input>
           <div style="font-size: 12px; color: #909399; margin-top: 5px;">
             💡 Tips: Kode resi akan disembunyikan jika dikosongkan
           </div>
@@ -210,6 +221,13 @@
         </template>
       </el-dialog>
     </el-dialog>
+
+    <!-- QR Scanner Component -->
+    <QRScanner 
+      ref="qrScannerRef"
+      @scan-success="handleScanSuccess"
+      @scan-error="handleScanError"
+    />
   </div>
 </template>
 
@@ -220,12 +238,14 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useShippingStore } from '../stores/shipping'
 import { useUserStore } from '../stores/user'
 import api from '../services/api'
+import QRScanner from '../components/QRScanner.vue'
 
 const router = useRouter()
 const shippingStore = useShippingStore()
 const userStore = useUserStore()
 
 const shippingFormRef = ref()
+const qrScannerRef = ref()
 const showPreview = ref(false)
 const showActualPreview = ref(false)
 const generatedLabel = ref(null)
@@ -261,7 +281,13 @@ const shippingRules = {
     { pattern: /^[0-9+\-\s()]{10,15}$/, message: 'Format no HP tidak valid', trigger: 'blur' }
   ],
   shipping_code: [
-    { min: 3, message: 'Kode resi minimal 3 karakter jika diisi', trigger: 'blur' }
+    { min: 3, message: 'Kode resi minimal 3 karakter jika diisi', trigger: 'blur' },
+    { max: 50, message: 'Kode resi maksimal 50 karakter', trigger: 'blur' },
+    { 
+      pattern: /^[A-Za-z0-9\-_#/]*$/, 
+      message: 'Kode resi hanya boleh berisi huruf, angka, -, _, #, /', 
+      trigger: 'blur' 
+    }
   ]
 }
 
@@ -295,6 +321,29 @@ const generateShippingLabel = async () => {
     console.error('Generate error:', error)
     ElMessage.error('Terjadi kesalahan saat membuat label')
   }
+}
+
+// QR Scanner functions
+const openScanner = () => {
+  if (qrScannerRef.value) {
+    qrScannerRef.value.startScanning()
+  } else {
+    ElMessage.error('Scanner tidak tersedia')
+  }
+}
+
+const handleScanSuccess = (scannedCode) => {
+  shippingForm.shipping_code = scannedCode
+  ElMessage.success(`Berhasil scan kode: ${scannedCode}`)
+  
+  // Clear any validation errors
+  if (shippingFormRef.value) {
+    shippingFormRef.value.clearValidate(['shipping_code'])
+  }
+}
+
+const handleScanError = (error) => {
+  ElMessage.error(`Error scanning: ${error}`)
 }
 
 const showLabelPreview = async () => {
