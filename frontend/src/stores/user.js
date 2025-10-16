@@ -102,6 +102,40 @@ export const useUserStore = defineStore('user', {
       const { useLabelStore } = require('./label')
       const labelStore = useLabelStore()
       labelStore.clearLabels()
+      
+      // Clear shipping labels when logout
+      try {
+        const { useShippingStore } = require('./shipping')
+        const shippingStore = useShippingStore()
+        shippingStore.shippingLabels = []
+      } catch (e) {
+        // Shipping store might not be loaded yet
+      }
+      
+      // Redirect to login page
+      if (typeof window !== 'undefined' && window.location) {
+        window.location.href = '/login'
+      }
+    },
+
+    async updateProfile(profileData) {
+      this.loading = true
+      this.error = null
+      
+      try {
+        const response = await api.put('/auth/me', profileData)
+        
+        // Update user data in store
+        this.user = { ...this.user, ...response.data }
+        
+        return { success: true, data: response.data }
+      } catch (error) {
+        console.error('Update profile error:', error)
+        this.error = error.response?.data?.detail || 'Gagal memperbarui profil'
+        return { success: false, error: this.error }
+      } finally {
+        this.loading = false
+      }
     },
 
     clearError() {

@@ -5,6 +5,7 @@ from typing import Optional
 class UserCreate(BaseModel):
     name: str
     email: EmailStr
+    phone: Optional[str] = None  # Added phone field
     password: str = Field(..., min_length=6, max_length=70, description="Password must be 6-70 characters")
     
     @validator('password')
@@ -19,9 +20,15 @@ class UserResponse(BaseModel):
     id: int
     name: str
     email: str
+    phone: Optional[str] = None  # Added phone field
     
     class Config:
         from_attributes = True
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -35,6 +42,28 @@ class LabelResponse(BaseModel):
     id: int
     sender_name: str
     shipping_code: str
+    image_path: Optional[str] = None
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class ShippingLabelCreate(BaseModel):
+    sender_name: str
+    sender_phone: str
+    recipient_name: str
+    recipient_address: str
+    recipient_phone: str
+    shipping_code: Optional[str] = ""  # Made optional with empty default
+
+class ShippingLabelResponse(BaseModel):
+    id: int
+    sender_name: str
+    sender_phone: str
+    recipient_name: str
+    recipient_address: str
+    recipient_phone: str
+    shipping_code: Optional[str] = ""  # Made optional with empty default
     image_path: Optional[str] = None
     created_at: datetime
     

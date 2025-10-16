@@ -3,10 +3,14 @@
 ## Aplikasi Cetak Label Paket untuk Thermal Printer 58mm
 
 ### Fitur
-- Register User (nama/email/password)
+- Register User (nama/email/no hp/password)
 - Login (email/password) 
 - Reset password dengan kode email
-- Cetak Label dengan QR Code otomatis
+- Cetak Label Sederhana dengan QR Code otomatis
+- Cetak Label Pengiriman lengkap (pengirim → penerima)
+- History gabungan untuk semua jenis label
+- Preview dan print untuk thermal printer 58mm
+- Kode resi opsional (bisa dikosongkan)
 - Logout
 
 ### Teknologi
@@ -26,7 +30,7 @@ setup.bat
 run-server.bat
 
 # Option 2: Manual setup
-python -m venv .venv
+python -m venv .venv .venv
 .venv\Scripts\activate  # Windows
 pip install -r requirements.txt
 copy .env.example .env
@@ -140,14 +144,24 @@ Pastikan PostgreSQL sudah terinstall dan running.
 Update connection string di `backend/.env`
 
 ## API Endpoints
-- `POST /auth/register` - Register user baru
+
+### Authentication
+- `POST /auth/register` - Register user baru (dengan no hp)
 - `POST /auth/login` - Login user
 - `GET /auth/me` - Get current user profile
 - `POST /auth/reset-password` - Reset password
-- `GET /labels` - Get semua label user
-- `POST /labels/generate` - Generate label dengan QR code
+
+### Simple Labels
+- `GET /labels` - Get semua simple label user
+- `POST /labels/generate` - Generate simple label dengan QR code
 - `GET /labels/print/{id}` - Get data label untuk print
 - `GET /labels/preview/{id}` - Preview image label (returns PNG)
+
+### Shipping Labels  
+- `GET /shipping-labels` - Get semua shipping label user
+- `POST /shipping-labels/generate` - Generate shipping label lengkap
+- `GET /shipping-labels/print/{id}` - Get data shipping label untuk print
+- `GET /shipping-labels/preview/{id}` - Preview shipping label (returns PNG)
 
 ## Print Format
 Label dirancang untuk thermal printer lebar 58mm dengan format optimized untuk paket pengiriman.

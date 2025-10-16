@@ -31,6 +31,14 @@
           />
         </el-form-item>
 
+        <el-form-item label="No HP" prop="phone">
+          <el-input
+            v-model="registerForm.phone"
+            placeholder="Masukkan nomor HP (contoh: 081234567890)"
+            prefix-icon="Phone"
+          />
+        </el-form-item>
+
         <el-form-item label="Password" prop="password">
           <el-input
             v-model="registerForm.password"
@@ -95,6 +103,7 @@ const registerFormRef = ref()
 const registerForm = reactive({
   name: '',
   email: '',
+  phone: '',
   password: '',
   confirmPassword: ''
 })
@@ -115,6 +124,12 @@ const rules = {
   email: [
     { required: true, message: 'Email harus diisi', trigger: 'blur' },
     { type: 'email', message: 'Format email tidak valid', trigger: 'blur' }
+  ],
+  phone: [
+    { required: true, message: 'No HP harus diisi', trigger: 'blur' },
+    { min: 10, message: 'No HP minimal 10 digit', trigger: 'blur' },
+    { max: 15, message: 'No HP maksimal 15 digit', trigger: 'blur' },
+    { pattern: /^[0-9]+$/, message: 'No HP hanya boleh berisi angka', trigger: 'blur' }
   ],
   password: [
     { required: true, message: 'Password harus diisi', trigger: 'blur' },

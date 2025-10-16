@@ -32,6 +32,18 @@ const routes = [
     name: 'CreateLabel',
     component: () => import('../views/CreateLabel.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/create-shipping-label',
+    name: 'CreateShippingLabel',
+    component: () => import('../views/CreateShippingLabel.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/profile/edit',
+    name: 'ProfileEdit',
+    component: () => import('../views/ProfileEdit.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

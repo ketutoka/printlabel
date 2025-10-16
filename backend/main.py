@@ -3,22 +3,51 @@ from fastapi.security import OAuth2PasswordBearer
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from datetime import datetime, timedelta
 from typing import Optional
 import os
 from dotenv import load_dotenv
 
 from database import SessionLocal, engine
-from models import Base, User, Label
-from schemas import UserCreate, UserResponse, UserLogin, LabelCreate, LabelResponse
+from models import Base, User, Label, ShippingLabel
+from schemas import UserCreate, UserResponse, UserLogin, UserUpdate, LabelCreate, LabelResponse, ShippingLabelCreate, ShippingLabelResponse
 from auth import authenticate_user, create_access_token, get_current_user
-from label_generator import generate_label_with_qr, get_label_image
+from label_generator import generate_label_with_qr, generate_shipping_label, get_label_image
 
 # Load environment variables
 load_dotenv()
 
+# Database migration function
+def run_migrations():
+    """Run database migrations"""
+    try:
+        with engine.connect() as connection:
+            # Check if phone column exists in users table
+            result = connection.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'users' AND column_name = 'phone';
+            """))
+            
+            if not result.fetchone():
+                # Add phone column to users table
+                connection.execute(text("""
+                    ALTER TABLE users 
+                    ADD COLUMN phone VARCHAR(20);
+                """))
+                connection.commit()
+                print("✅ Added phone column to users table")
+            
+            print("✅ Database migration completed")
+    except Exception as e:
+        print(f"⚠️ Migration warning: {e}")
+
 # Create database tables
 Base.metadata.create_all(bind=engine)
+
+# Run migrations
+run_migrations()
 
 app = FastAPI(
     title="Print Label API", 
@@ -113,8 +142,31 @@ def get_current_user_profile(current_user: User = Depends(get_current_user)):
     return UserResponse(
         id=current_user.id,
         name=current_user.name,
-        email=current_user.email
+        email=current_user.email,
+        phone=current_user.phone
     )
+
+@app.put("/auth/me", response_model=UserResponse)
+def update_current_user_profile(
+    user_update: UserUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from crud import update_user
+    
+    try:
+        updated_user = update_user(db, current_user.id, user_update)
+        if not updated_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return UserResponse(
+            id=updated_user.id,
+            name=updated_user.name,
+            email=updated_user.email,
+            phone=updated_user.phone
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 # Label endpoints
 @app.post("/labels/generate", response_model=LabelResponse)
@@ -233,6 +285,131 @@ def preview_label_image(
         path=label.image_path,
         media_type="image/png",
         filename=f"preview_label_{label.shipping_code}.png"
+    )
+
+# Shipping Label endpoints
+@app.post("/shipping-labels/generate", response_model=ShippingLabelResponse)
+def generate_shipping_label_endpoint(
+    shipping_label: ShippingLabelCreate, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from crud import create_shipping_label
+    
+    # Create shipping label in database
+    db_shipping_label = create_shipping_label(db, shipping_label, current_user.id)
+    
+    # Generate shipping label image
+    label_image_path = generate_shipping_label(
+        sender_name=shipping_label.sender_name,
+        sender_phone=shipping_label.sender_phone,
+        recipient_name=shipping_label.recipient_name,
+        recipient_address=shipping_label.recipient_address,
+        recipient_phone=shipping_label.recipient_phone,
+        shipping_code=shipping_label.shipping_code,
+        label_id=db_shipping_label.id
+    )
+    
+    # Update shipping label with image path
+    db_shipping_label.image_path = label_image_path
+    db.commit()
+    
+    return ShippingLabelResponse(
+        id=db_shipping_label.id,
+        sender_name=db_shipping_label.sender_name,
+        sender_phone=db_shipping_label.sender_phone,
+        recipient_name=db_shipping_label.recipient_name,
+        recipient_address=db_shipping_label.recipient_address,
+        recipient_phone=db_shipping_label.recipient_phone,
+        shipping_code=db_shipping_label.shipping_code,
+        image_path=db_shipping_label.image_path,
+        created_at=db_shipping_label.created_at
+    )
+
+@app.get("/shipping-labels", response_model=list[ShippingLabelResponse])
+def get_user_shipping_labels(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from crud import get_user_shipping_labels
+    
+    shipping_labels = get_user_shipping_labels(db, current_user.id)
+    return [
+        ShippingLabelResponse(
+            id=label.id,
+            sender_name=label.sender_name,
+            sender_phone=label.sender_phone,
+            recipient_name=label.recipient_name,
+            recipient_address=label.recipient_address,
+            recipient_phone=label.recipient_phone,
+            shipping_code=label.shipping_code,
+            image_path=label.image_path,
+            created_at=label.created_at
+        )
+        for label in shipping_labels
+    ]
+
+@app.get("/shipping-labels/print/{label_id}")
+def get_shipping_label_for_print(
+    label_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from crud import get_shipping_label
+    
+    label = get_shipping_label(db, label_id, current_user.id)
+    if not label:
+        raise HTTPException(status_code=404, detail="Shipping label not found")
+    
+    return {
+        "id": label.id,
+        "sender_name": label.sender_name,
+        "sender_phone": label.sender_phone,
+        "recipient_name": label.recipient_name,
+        "recipient_address": label.recipient_address,
+        "recipient_phone": label.recipient_phone,
+        "shipping_code": label.shipping_code,
+        "image_path": label.image_path
+    }
+
+@app.get("/shipping-labels/preview/{label_id}")
+def preview_shipping_label_image(
+    label_id: int,
+    token: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    from crud import get_shipping_label
+    from jose import JWTError, jwt
+    from auth import SECRET_KEY, ALGORITHM
+    from crud import get_user_by_email
+    
+    current_user = None
+    
+    # Try to get token from query parameter first
+    if token:
+        try:
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            email: str = payload.get("sub")
+            if email:
+                current_user = get_user_by_email(db, email)
+        except JWTError:
+            pass
+    
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    
+    label = get_shipping_label(db, label_id, current_user.id)
+    if not label:
+        raise HTTPException(status_code=404, detail="Shipping label not found")
+    
+    # Check if image file exists
+    if not label.image_path or not os.path.exists(label.image_path):
+        raise HTTPException(status_code=404, detail="Shipping label image not found")
+    
+    return FileResponse(
+        path=label.image_path,
+        media_type="image/png",
+        filename=f"preview_shipping_label_{label.shipping_code}.png"
     )
 
 if __name__ == "__main__":
