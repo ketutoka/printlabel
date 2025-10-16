@@ -39,6 +39,30 @@ def run_migrations():
                 connection.commit()
                 print("✅ Added phone column to users table")
             
+            # Check if sender_phone column exists in labels table
+            result = connection.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'labels' AND column_name = 'sender_phone';
+            """))
+            
+            if not result.fetchone():
+                # Add sender_phone column to labels table
+                connection.execute(text("""
+                    ALTER TABLE labels 
+                    ADD COLUMN sender_phone VARCHAR(20) NOT NULL DEFAULT '0818986657';
+                """))
+                
+                # Update existing records that might still have NULL values
+                connection.execute(text("""
+                    UPDATE labels 
+                    SET sender_phone = '0818986657' 
+                    WHERE sender_phone IS NULL OR sender_phone = '';
+                """))
+                
+                connection.commit()
+                print("✅ Added sender_phone column to labels table")
+            
             print("✅ Database migration completed")
     except Exception as e:
         print(f"⚠️ Migration warning: {e}")
@@ -184,7 +208,8 @@ def generate_label(
     label_image_path = generate_label_with_qr(
         sender_name=label.sender_name,
         shipping_code=label.shipping_code,
-        label_id=db_label.id
+        label_id=db_label.id,
+        sender_phone=label.sender_phone
     )
     
     # Update label with image path
@@ -194,6 +219,7 @@ def generate_label(
     return LabelResponse(
         id=db_label.id,
         sender_name=db_label.sender_name,
+        sender_phone=db_label.sender_phone,
         shipping_code=db_label.shipping_code,
         image_path=db_label.image_path,
         created_at=db_label.created_at
@@ -211,6 +237,7 @@ def get_user_labels(
         LabelResponse(
             id=label.id,
             sender_name=label.sender_name,
+            sender_phone=getattr(label, 'sender_phone', '0818986657'),  # Handle missing field
             shipping_code=label.shipping_code,
             image_path=label.image_path,
             created_at=label.created_at

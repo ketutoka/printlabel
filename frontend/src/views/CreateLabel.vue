@@ -5,7 +5,7 @@
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
-              <h2>🏷️ Buat Label Baru</h2>
+              <h2>🏷️ Buat QRCODE Label</h2>
               <p>Isi informasi untuk membuat label paket dengan QR Code</p>
             </div>
           </template>
@@ -17,7 +17,7 @@
             label-width="120px"
             @submit.prevent="handleCreateLabel"
           >
-            <el-form-item label="Nama Pengirim" prop="sender_name">
+            <el-form-item label="Nama" prop="sender_name">
               <el-input
                 v-model="labelForm.sender_name"
                 placeholder="Masukkan nama pengirim"
@@ -25,7 +25,15 @@
               />
             </el-form-item>
 
-            <el-form-item label="Kode Pengiriman" prop="shipping_code">
+            <el-form-item label="No HP" prop="sender_phone">
+              <el-input
+                v-model="labelForm.sender_phone"
+                placeholder="Masukkan nomor HP pengirim"
+                prefix-icon="Phone"
+              />
+            </el-form-item>
+
+            <el-form-item label="Resi" prop="shipping_code">
               <el-input
                 v-model="labelForm.shipping_code"
                 placeholder="Masukkan kode pengiriman (contoh: PKG001)"
@@ -44,7 +52,7 @@
                 @click="handleCreateLabel"
                 size="large"
               >
-                {{ labelStore.loading ? 'Membuat Label...' : 'Buat & Generate QR Code' }}
+                {{ labelStore.loading ? 'Membuat Label...' : 'Generate QR Code' }}
               </el-button>
               <el-button @click="resetForm" style="margin-left: 10px;">
                 Reset
@@ -85,6 +93,9 @@
         <div class="preview-content">
           <p><strong>Pengirim:</strong></p>
           <p>{{ generatedLabel.sender_name }}</p>
+          
+          <p style="margin-top: 10px;"><strong>No HP:</strong></p>
+          <p>{{ labelForm.sender_phone || 'Tidak ada' }}</p>
           
           <p style="margin-top: 15px;"><strong>Kode Pengiriman:</strong></p>
           <p>{{ generatedLabel.shipping_code }}</p>
@@ -130,6 +141,7 @@
         <div class="preview-info">
           <h3>🏷️ {{ generatedLabel.shipping_code }}</h3>
           <p><strong>Pengirim:</strong> {{ generatedLabel.sender_name }}</p>
+          <p><strong>No HP:</strong> {{ labelForm.sender_phone || 'Tidak ada' }}</p>
           <p><strong>Tanggal:</strong> {{ formatDate(generatedLabel.created_at) }}</p>
         </div>
         
@@ -156,7 +168,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useLabelStore } from '../stores/label'
@@ -175,6 +187,7 @@ const actualPreviewUrl = ref('')
 
 const labelForm = reactive({
   sender_name: '',
+  sender_phone: '',
   shipping_code: ''
 })
 
@@ -182,6 +195,16 @@ const rules = {
   sender_name: [
     { required: true, message: 'Nama pengirim harus diisi', trigger: 'blur' },
     { min: 2, message: 'Nama pengirim minimal 2 karakter', trigger: 'blur' }
+  ],
+  sender_phone: [
+    { required: true, message: 'No HP pengirim harus diisi', trigger: 'blur' },
+    { 
+      pattern: /^[0-9+\-\s()]+$/, 
+      message: 'No HP hanya boleh berisi angka, +, -, spasi, dan tanda kurung', 
+      trigger: 'blur' 
+    },
+    { min: 8, message: 'No HP minimal 8 karakter', trigger: 'blur' },
+    { max: 20, message: 'No HP maksimal 20 karakter', trigger: 'blur' }
   ],
   shipping_code: [
     { required: true, message: 'Kode pengiriman harus diisi', trigger: 'blur' },
@@ -214,10 +237,19 @@ const handleCreateLabel = async () => {
 }
 
 const resetForm = () => {
-  labelForm.sender_name = ''
+  // Reset to default values from user profile
+  labelForm.sender_name = userStore.user?.name || ''
+  labelForm.sender_phone = userStore.user?.phone || ''
   labelForm.shipping_code = ''
   labelStore.clearError()
 }
+
+// Initialize form with user data
+onMounted(() => {
+  // Set default values from user profile
+  labelForm.sender_name = userStore.user?.name || ''
+  labelForm.sender_phone = userStore.user?.phone || ''
+})
 
 const printLabel = async () => {
   try {

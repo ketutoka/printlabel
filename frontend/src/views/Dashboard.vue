@@ -6,7 +6,6 @@
         <el-card shadow="never" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
           <div class="user-header">
             <div class="user-info">
-              <h3>🏷️ Print Label App</h3>
               <p>Aplikasi cetak label thermal printer 58mm</p>
             </div>
             <div class="user-profile">
@@ -142,27 +141,30 @@
 
           <div v-else>
             <el-table :data="paginatedLabels" stripe>
-              <el-table-column label="Aksi" width="80" fixed="left">
+              <el-table-column label="Aksi" width="60" fixed="left">
                 <template #default="scope">
-                  <el-button 
-                    type="success" 
-                    size="small"
-                    circle
-                    @click="previewLabel(scope.row)"
-                    style="margin-right: 5px;"
-                    :title="'Preview label'"
-                  >
-                    <el-icon><View /></el-icon>
-                  </el-button>
-                  <el-button 
-                    type="primary" 
-                    size="small"
-                    circle
-                    @click="printLabel(scope.row)"
-                    :title="'Print label'"
-                  >
-                    <el-icon><Printer /></el-icon>
-                  </el-button>
+                  <el-dropdown @command="(command) => handleActionCommand(command, scope.row)" placement="bottom-start">
+                    <el-button 
+                      type="primary" 
+                      size="small"
+                      circle
+                      :title="'Menu Aksi'"
+                    >
+                      <el-icon><More /></el-icon>
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item command="preview">
+                          <el-icon><View /></el-icon>
+                          Preview Label
+                        </el-dropdown-item>
+                        <el-dropdown-item command="print">
+                          <el-icon><Printer /></el-icon>
+                          Print Label
+                        </el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
                 </template>
               </el-table-column>
               <el-table-column prop="type" label="Jenis" width="100">
@@ -172,7 +174,7 @@
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="shipping_code" label="Kode/Resi" width="150" />
+              <el-table-column prop="shipping_code" label="Kode/Resi" width="180" />
               <el-table-column prop="display_name" label="Detail" />
               <el-table-column prop="created_at" label="Tanggal Dibuat" width="180">
                 <template #default="scope">
@@ -279,7 +281,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, Setting, SwitchButton, ArrowDown, View, Printer, Search } from '@element-plus/icons-vue'
+import { User, Setting, SwitchButton, ArrowDown, View, Printer, Search, More } from '@element-plus/icons-vue'
 import { useLabelStore } from '../stores/label'
 import { useShippingStore } from '../stores/shipping'
 import { useUserStore } from '../stores/user'
@@ -396,6 +398,20 @@ const handleSizeChange = (newSize) => {
 
 const handleCurrentChange = (newPage) => {
   currentPage.value = newPage
+}
+
+// Handle dropdown action commands
+const handleActionCommand = (command, label) => {
+  switch (command) {
+    case 'preview':
+      previewLabel(label)
+      break
+    case 'print':
+      printLabel(label)
+      break
+    default:
+      console.warn('Unknown command:', command)
+  }
 }
 
 const printLabel = async (label) => {

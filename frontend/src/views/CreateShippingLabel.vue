@@ -81,16 +81,30 @@
         </el-form-item>
 
         <el-form-item>
-          <el-button 
-            type="primary" 
-            @click="generateShippingLabel"
-            :loading="shippingStore.loading"
-            size="large"
-            style="width: 100%; margin-top: 20px;"
-          >
-            <span v-if="!shippingStore.loading">🏷️ Buat Label Pengiriman</span>
-            <span v-else>⏳ Membuat Label...</span>
-          </el-button>
+          <el-row :gutter="10" style="margin-top: 20px;">
+            <el-col :span="12">
+              <el-button 
+                type="primary" 
+                @click="generateShippingLabel"
+                :loading="shippingStore.loading"
+                size="large"
+                style="width: 100%;"
+              >
+                <span v-if="!shippingStore.loading">🏷️ Buat Label</span>
+                <span v-else>⏳ Membuat Label...</span>
+              </el-button>
+            </el-col>
+            <el-col :span="12">
+              <el-button 
+                type="info" 
+                @click="backToDashboard"
+                size="large"
+                style="width: 100%;"
+              >
+                ← Kembali
+              </el-button>
+            </el-col>
+          </el-row>          
         </el-form-item>
       </el-form>
 

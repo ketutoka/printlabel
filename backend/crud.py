@@ -55,6 +55,7 @@ def update_user(db: Session, user_id: int, user_update: UserUpdate):
 def create_label(db: Session, label: LabelCreate, user_id: int):
     db_label = Label(
         sender_name=label.sender_name,
+        sender_phone=label.sender_phone,
         shipping_code=label.shipping_code,
         user_id=user_id
     )

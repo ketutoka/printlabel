@@ -36,11 +36,13 @@ class UserLogin(BaseModel):
 
 class LabelCreate(BaseModel):
     sender_name: str
+    sender_phone: str
     shipping_code: str
 
 class LabelResponse(BaseModel):
     id: int
     sender_name: str
+    sender_phone: Optional[str] = "0818986657"  # Default value for existing data
     shipping_code: str
     image_path: Optional[str] = None
     created_at: datetime

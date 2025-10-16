@@ -3,9 +3,10 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 from datetime import datetime
 
-def generate_label_with_qr(sender_name: str, shipping_code: str, label_id: int) -> str:
+def generate_label_with_qr(sender_name: str, shipping_code: str, label_id: int, sender_phone: str = "0818986657") -> str:
     """
-    Generate label image with QR code for thermal printer 58mm width
+    Generate simple label image with QR code for thermal printer 58mm width
+    Large fonts and QR code for better readability
     Returns the path to the generated image
     """
     
@@ -16,61 +17,65 @@ def generate_label_with_qr(sender_name: str, shipping_code: str, label_id: int) 
     
     # Thermal printer 58mm ≈ 203 pixels at 203 DPI
     label_width = 203
-    label_height = 320  # Increased for better spacing
+    label_height = 230  # Increased for large QR and fonts
     
     # Create white background
     img = Image.new('RGB', (label_width, label_height), 'white')
     draw = ImageDraw.Draw(img)
     
     try:
-        # Use larger fonts for thermal printer readability
-        font_large = ImageFont.truetype("arial.ttf", 16)    # Increased from 12
-        font_medium = ImageFont.truetype("arial.ttf", 14)   # Increased from 10
-        font_small = ImageFont.truetype("arial.ttf", 12)    # Increased from 8
-        font_tiny = ImageFont.truetype("arial.ttf", 10)     # For very small text
+        # Much larger fonts for simple label like the example
+        font_header = ImageFont.truetype("arial.ttf", 16)    # Very large for "Pengirim:"
+        font_name = ImageFont.truetype("arial.ttf", 16)      # Large for sender name
+        font_phone = ImageFont.truetype("arial.ttf", 16)     # Large for phone number  
+        font_resi_label = ImageFont.truetype("arial.ttf", 14) # Medium for "Resi Pengiriman:"
+        font_resi_code = ImageFont.truetype("arial.ttf", 18)  # Very large for shipping code
     except:
-        # Fallback fonts with better spacing
+        # Fallback fonts - try calibri
         try:
-            font_large = ImageFont.truetype("calibri.ttf", 16)
-            font_medium = ImageFont.truetype("calibri.ttf", 14)
-            font_small = ImageFont.truetype("calibri.ttf", 12)
-            font_tiny = ImageFont.truetype("calibri.ttf", 10)
+            font_header = ImageFont.truetype("calibri.ttf", 16)
+            font_name = ImageFont.truetype("calibri.ttf", 16)
+            font_phone = ImageFont.truetype("calibri.ttf", 16)
+            font_resi_label = ImageFont.truetype("calibri.ttf", 14)
+            font_resi_code = ImageFont.truetype("calibri.ttf", 18)
         except:
-            font_large = ImageFont.load_default()
-            font_medium = ImageFont.load_default()
-            font_small = ImageFont.load_default()
-            font_tiny = ImageFont.load_default()
+            # Final fallback
+            font_header = ImageFont.load_default()
+            font_name = ImageFont.load_default()
+            font_phone = ImageFont.load_default()
+            font_resi_label = ImageFont.load_default()
+            font_resi_code = ImageFont.load_default()
     
-    # Generate QR code with better error correction for thermal
+    # Generate larger QR code like the example
     qr = qrcode.QRCode(
-        version=2,  # Slightly larger QR for better readability
-        error_correction=qrcode.constants.ERROR_CORRECT_M,  # Better error correction
-        box_size=3,  # Larger box size for thermal printer
-        border=2,
+        version=3,  # Larger QR version
+        error_correction=qrcode.constants.ERROR_CORRECT_L,  # Lower error correction for larger data capacity
+        box_size=4,  # Much larger box size
+        border=1,    # Minimal border
     )
     qr.add_data(shipping_code)
     qr.make(fit=True)
     
     qr_img = qr.make_image(fill_color="black", back_color="white")
-    qr_size = 85  # 3 cm ≈ 85 pixels for 58mm thermal printer
+    qr_size = 130  # Much larger QR code - about 4.2cm like in the example
     qr_img = qr_img.resize((qr_size, qr_size))
     
-    # Layout design - start directly with sender info
-    y_offset = 12  # Top margin
+    # Layout design matching the example
+    y_offset = 5  # Top margin
     
-    # Sender info with better spacing - centered format
-    sender_label_text = "PENGIRIM:"
-    sender_label_bbox = draw.textbbox((0, 0), sender_label_text, font=font_small)
-    sender_label_width = sender_label_bbox[2] - sender_label_bbox[0]
-    sender_label_x = (label_width - sender_label_width) // 2
-    draw.text((sender_label_x, y_offset), sender_label_text, fill="black", font=font_small)
-    y_offset += 18  # More spacing between label and content
+    # "Pengirim:" header - large and centered
+    pengirim_text = "Pengirim:"
+    pengirim_bbox = draw.textbbox((0, 0), pengirim_text, font=font_header)
+    pengirim_width = pengirim_bbox[2] - pengirim_bbox[0]
+    pengirim_x = (label_width - pengirim_width) // 2
+    draw.text((pengirim_x, y_offset), pengirim_text, fill="black", font=font_header)
+    y_offset += 23  # More spacing after header
     
-    # Center sender name - always 2 lines format
-    if len(sender_name) > 18:  # If name is too long, split intelligently
+    # Sender name - large and centered like "SehatJos" in example
+    # Split name if too long to fit
+    if len(sender_name) > 12:  # Adjust threshold for large font
         words = sender_name.split()
         if len(words) >= 2:
-            # Split into 2 lines as evenly as possible
             mid_point = len(words) // 2
             line1 = " ".join(words[:mid_point])
             line2 = " ".join(words[mid_point:])
@@ -80,90 +85,69 @@ def generate_label_with_qr(sender_name: str, shipping_code: str, label_id: int) 
             line1 = sender_name[:mid_char]
             line2 = sender_name[mid_char:]
     else:
-        # For shorter names, put in single line centered, with empty second line
         line1 = sender_name
         line2 = ""
     
-    # Draw first line centered
-    line1_bbox = draw.textbbox((0, 0), line1, font=font_medium)
+    # Draw first line of name
+    line1_bbox = draw.textbbox((0, 0), line1, font=font_name)
     line1_width = line1_bbox[2] - line1_bbox[0]
     line1_x = (label_width - line1_width) // 2
-    draw.text((line1_x, y_offset), line1, fill="black", font=font_medium)
-    y_offset += 18
+    draw.text((line1_x, y_offset), line1, fill="black", font=font_name)
+    y_offset += 17
     
-    # Draw second line centered (if exists)
+    # Draw second line of name if exists
     if line2:
-        line2_bbox = draw.textbbox((0, 0), line2, font=font_medium)
+        line2_bbox = draw.textbbox((0, 0), line2, font=font_name)
         line2_width = line2_bbox[2] - line2_bbox[0]
         line2_x = (label_width - line2_width) // 2
-        draw.text((line2_x, y_offset), line2, fill="black", font=font_medium)
-        y_offset += 18
+        draw.text((line2_x, y_offset), line2, fill="black", font=font_name)
+        y_offset += 17
     else:
-        y_offset += 18  # Keep spacing consistent even if no second line
+        y_offset += 5  # Small space if no second line
     
-    y_offset += 8  # Extra space after sender
+    # Phone number - large like "0818986657" in example
+    phone_text = sender_phone or "0818986657"  # Use provided phone or default
+    phone_bbox = draw.textbbox((0, 0), phone_text, font=font_phone)
+    phone_width = phone_bbox[2] - phone_bbox[0]
+    phone_x = (label_width - phone_width) // 2
+    draw.text((phone_x, y_offset), phone_text, fill="black", font=font_phone)
+    y_offset += 17
     
-    # Shipping code with better spacing - centered format
-    shipping_label_text = "RESI PENGIRIMAN:"
-    shipping_label_bbox = draw.textbbox((0, 0), shipping_label_text, font=font_small)
-    shipping_label_width = shipping_label_bbox[2] - shipping_label_bbox[0]
-    shipping_label_x = (label_width - shipping_label_width) // 2
-    draw.text((shipping_label_x, y_offset), shipping_label_text, fill="black", font=font_small)
-    y_offset += 18  # More spacing
+    # "Resi Pengiriman:" label
+    resi_label_text = "Resi Pengiriman:"
+    resi_label_bbox = draw.textbbox((0, 0), resi_label_text, font=font_resi_label)
+    resi_label_width = resi_label_bbox[2] - resi_label_bbox[0]
+    resi_label_x = (label_width - resi_label_width) // 2
+    draw.text((resi_label_x, y_offset), resi_label_text, fill="black", font=font_resi_label)
+    y_offset += 20
     
-    # Make shipping code centered and handle long codes
-    if len(shipping_code) > 15:  # For long codes (like 20 characters)
-        # Split into 2 lines for better readability
-        mid_point = len(shipping_code) // 2
-        # Find a good break point (space or hyphen) near the middle
-        break_point = mid_point
-        for i in range(max(0, mid_point-3), min(len(shipping_code), mid_point+4)):
-            if shipping_code[i] in ['-', '_', ' ']:
-                break_point = i
-                break
-        
-        line1 = shipping_code[:break_point]
-        line2 = shipping_code[break_point:].lstrip('-_')  # Remove leading separators
-        
-        # Draw first line centered
-        line1_bbox = draw.textbbox((0, 0), line1, font=font_medium)
-        line1_width = line1_bbox[2] - line1_bbox[0]
-        line1_x = (label_width - line1_width) // 2
-        draw.text((line1_x, y_offset), line1, fill="black", font=font_medium)
-        y_offset += 16
-        
-        # Draw second line centered
-        line2_bbox = draw.textbbox((0, 0), line2, font=font_medium)
-        line2_width = line2_bbox[2] - line2_bbox[0]
-        line2_x = (label_width - line2_width) // 2
-        draw.text((line2_x, y_offset), line2, fill="black", font=font_medium)
-        y_offset += 20
-    else:
-        # For shorter codes, add spacing between characters and center
-        shipping_code_spaced = " ".join(shipping_code)
-        shipping_code_bbox = draw.textbbox((0, 0), shipping_code_spaced, font=font_medium)
-        shipping_code_width = shipping_code_bbox[2] - shipping_code_bbox[0]
-        shipping_code_x = (label_width - shipping_code_width) // 2
-        draw.text((shipping_code_x, y_offset), shipping_code_spaced, fill="black", font=font_medium)
-        y_offset += 25  # More spacing
-    
-    # QR Code - centered with more space
+    # Large QR Code - centered like in example
     qr_x = (label_width - qr_size) // 2
     img.paste(qr_img, (qr_x, y_offset))
-    y_offset += qr_size + 12  # More space after QR
+    y_offset += qr_size + 3  # Space after QR
     
-    # QR info with better centering
-    qr_info_text = f"Scan: {shipping_code}"
-    qr_info_bbox = draw.textbbox((0, 0), qr_info_text, font=font_tiny)
-    qr_info_width = qr_info_bbox[2] - qr_info_bbox[0]
-    qr_info_x = (label_width - qr_info_width) // 2
-    draw.text((qr_info_x, y_offset), qr_info_text, fill="black", font=font_tiny)
-    y_offset += 18
-    
-    # Thicker separator line
-    draw.line([(8, y_offset), (label_width - 8, y_offset)], fill="black", width=2)
-    y_offset += 12
-    
+    # Shipping code below QR - very large like "SPXID050699308944A" in example
+    if len(shipping_code) > 12:  # Split long codes
+        # For very long codes, split into multiple lines
+        chars_per_line = 12
+        lines = []
+        for i in range(0, len(shipping_code), chars_per_line):
+            lines.append(shipping_code[i:i+chars_per_line])
+        
+        for line in lines:
+            line_bbox = draw.textbbox((0, 0), line, font=font_resi_code)
+            line_width = line_bbox[2] - line_bbox[0]
+            line_x = (label_width - line_width) // 2
+            draw.text((line_x, y_offset), line, fill="black", font=font_resi_code)
+            y_offset += 17
+    else:
+        # For shorter codes, show in one line
+        code_bbox = draw.textbbox((0, 0), shipping_code, font=font_resi_code)
+        code_width = code_bbox[2] - code_bbox[0]
+        code_x = (label_width - code_width) // 2
+        draw.text((code_x, y_offset), shipping_code, fill="black", font=font_resi_code)
+        y_offset += 17
+
     # Save the image with higher DPI for thermal printer
     filename = f"label_{label_id}_{shipping_code}.png"
     filepath = os.path.join(labels_dir, filename)
@@ -232,6 +216,7 @@ def generate_shipping_label(sender_name: str, sender_phone: str, recipient_name:
                           recipient_address: str, recipient_phone: str, shipping_code: str, label_id: int) -> str:
     """
     Generate shipping label with sender and recipient information for thermal printer 58mm width
+    Optimized for thermal printer sharpness and clarity
     Returns the path to the generated image
     """
     
@@ -240,61 +225,87 @@ def generate_shipping_label(sender_name: str, sender_phone: str, recipient_name:
     if not os.path.exists(labels_dir):
         os.makedirs(labels_dir)
     
-    # Thermal printer 58mm ≈ 203 pixels at 203 DPI
-    label_width = 203
-    label_height = 400  # Increased for more content
+    # Thermal printer 58mm ≈ 304 pixels at 304 DPI (optimized resolution)
+    label_width = 304  # 1.5x for clean rendering without artifacts
+    label_height = 450  # Proportionally increased
     
-    # Create white background
+    # Create RGB image for cleaner text rendering, convert later
     img = Image.new('RGB', (label_width, label_height), 'white')
     draw = ImageDraw.Draw(img)
     
     try:
-        # Use larger fonts for thermal printer readability
-        font_large = ImageFont.truetype("arial.ttf", 16)
-        font_medium = ImageFont.truetype("arial.ttf", 14)
-        font_small = ImageFont.truetype("arial.ttf", 12)
-        font_tiny = ImageFont.truetype("arial.ttf", 10)
+        # Use regular fonts with larger sizes for cleaner thermal printing
+        font_large = ImageFont.truetype("arial.ttf", 28)      # Regular Arial for headers
+        font_medium = ImageFont.truetype("arial.ttf", 24)     # Regular Arial for names
+        font_small = ImageFont.truetype("arial.ttf", 20)      # Regular Arial for labels
+        font_tiny = ImageFont.truetype("arial.ttf", 16)       # Regular Arial for details
     except:
-        # Fallback fonts
+        # Fallback fonts with regular weight
         try:
-            font_large = ImageFont.truetype("calibri.ttf", 16)
-            font_medium = ImageFont.truetype("calibri.ttf", 14)
-            font_small = ImageFont.truetype("calibri.ttf", 12)
-            font_tiny = ImageFont.truetype("calibri.ttf", 10)
+            font_large = ImageFont.truetype("calibri.ttf", 28)    # Regular Calibri
+            font_medium = ImageFont.truetype("calibri.ttf", 24)
+            font_small = ImageFont.truetype("calibri.ttf", 20)
+            font_tiny = ImageFont.truetype("calibri.ttf", 16)
         except:
+            # Final fallback - load default font
             font_large = ImageFont.load_default()
             font_medium = ImageFont.load_default()
             font_small = ImageFont.load_default()
             font_tiny = ImageFont.load_default()
     
-    # Layout design with better spacing
-    y_offset = 12  # Top margin
+    # Layout design with optimal spacing
+    y_offset = 18  # Top margin
         
     # TO Section (Recipient)
-    to_label_text = "TO:"
+    to_label_text = "KEPADA:"
     to_label_bbox = draw.textbbox((0, 0), to_label_text, font=font_small)
     to_label_width = to_label_bbox[2] - to_label_bbox[0]
     to_label_x = (label_width - to_label_width) // 2
     draw.text((to_label_x, y_offset), to_label_text, fill="black", font=font_small)
-    y_offset += 16
+    y_offset += 24
     
-    # Recipient name centered
-    recipient_bbox = draw.textbbox((0, 0), recipient_name, font=font_medium)
-    recipient_width = recipient_bbox[2] - recipient_bbox[0]
-    recipient_x = (label_width - recipient_width) // 2
-    draw.text((recipient_x, y_offset), recipient_name, fill="black", font=font_medium)
-    y_offset += 18
+    # Recipient name centered (handle long names better)
+    if len(recipient_name) > 20:  # Split long names for better readability
+        words = recipient_name.split()
+        if len(words) >= 2:
+            mid_point = len(words) // 2
+            name_line1 = " ".join(words[:mid_point])
+            name_line2 = " ".join(words[mid_point:])
+        else:
+            mid_char = len(recipient_name) // 2
+            name_line1 = recipient_name[:mid_char]
+            name_line2 = recipient_name[mid_char:]
+        
+        # Draw first line
+        line1_bbox = draw.textbbox((0, 0), name_line1, font=font_medium)
+        line1_width = line1_bbox[2] - line1_bbox[0]
+        line1_x = (label_width - line1_width) // 2
+        draw.text((line1_x, y_offset), name_line1, fill="black", font=font_medium)
+        y_offset += 26
+        
+        # Draw second line
+        line2_bbox = draw.textbbox((0, 0), name_line2, font=font_medium)
+        line2_width = line2_bbox[2] - line2_bbox[0]
+        line2_x = (label_width - line2_width) // 2
+        draw.text((line2_x, y_offset), name_line2, fill="black", font=font_medium)
+        y_offset += 28
+    else:
+        recipient_bbox = draw.textbbox((0, 0), recipient_name, font=font_medium)
+        recipient_width = recipient_bbox[2] - recipient_bbox[0]
+        recipient_x = (label_width - recipient_width) // 2
+        draw.text((recipient_x, y_offset), recipient_name, fill="black", font=font_medium)
+        y_offset += 28
     
     # Address label centered
-    address_label_text = "ADDRESS:"
+    address_label_text = "ALAMAT:"
     address_label_bbox = draw.textbbox((0, 0), address_label_text, font=font_tiny)
     address_label_width = address_label_bbox[2] - address_label_bbox[0]
     address_label_x = (label_width - address_label_width) // 2
     draw.text((address_label_x, y_offset), address_label_text, fill="black", font=font_tiny)
-    y_offset += 14
+    y_offset += 20
     
     # Address - wrap to multiple lines and center each line
-    max_chars_per_line = 25
+    max_chars_per_line = 28
     address_words = recipient_address.split()
     address_lines = []
     current_line = ""
@@ -315,47 +326,47 @@ def generate_shipping_label(sender_name: str, sender_phone: str, recipient_name:
         line_width = line_bbox[2] - line_bbox[0]
         line_x = (label_width - line_width) // 2
         draw.text((line_x, y_offset), line, fill="black", font=font_tiny)
-        y_offset += 12
+        y_offset += 18
     
     # Recipient phone centered
-    phone_label_text = f"NO HP: {recipient_phone}"
+    phone_label_text = f"HP: {recipient_phone}"
     phone_label_bbox = draw.textbbox((0, 0), phone_label_text, font=font_tiny)
     phone_label_width = phone_label_bbox[2] - phone_label_bbox[0]
     phone_label_x = (label_width - phone_label_width) // 2
     draw.text((phone_label_x, y_offset), phone_label_text, fill="black", font=font_tiny)
-    y_offset += 20
+    y_offset += 30
     
     # Separator line
-    draw.line([(8, y_offset), (label_width - 8, y_offset)], fill="black", width=1)
-    y_offset += 15
-    
+    draw.line([(12, y_offset), (label_width - 12, y_offset)], fill="black", width=1)
+    y_offset += 22
+        
     # FROM Section (Sender)
-    from_label_text = "FROM:"
+    from_label_text = "PENGIRIM:"
     from_label_bbox = draw.textbbox((0, 0), from_label_text, font=font_small)
     from_label_width = from_label_bbox[2] - from_label_bbox[0]
     from_label_x = (label_width - from_label_width) // 2
     draw.text((from_label_x, y_offset), from_label_text, fill="black", font=font_small)
-    y_offset += 16
+    y_offset += 24
     
     # Sender name centered
     sender_bbox = draw.textbbox((0, 0), sender_name, font=font_medium)
     sender_width = sender_bbox[2] - sender_bbox[0]
     sender_x = (label_width - sender_width) // 2
     draw.text((sender_x, y_offset), sender_name, fill="black", font=font_medium)
-    y_offset += 18
+    y_offset += 28
     
     # Sender phone centered
-    sender_phone_text = f"NO HP: {sender_phone}"
+    sender_phone_text = f"HP: {sender_phone}"
     sender_phone_bbox = draw.textbbox((0, 0), sender_phone_text, font=font_tiny)
     sender_phone_width = sender_phone_bbox[2] - sender_phone_bbox[0]
     sender_phone_x = (label_width - sender_phone_width) // 2
     draw.text((sender_phone_x, y_offset), sender_phone_text, fill="black", font=font_tiny)
-    y_offset += 20
-    
+    y_offset += 30
+        
     # Separator line
-    draw.line([(8, y_offset), (label_width - 8, y_offset)], fill="black", width=2)
-    y_offset += 15
-    
+    draw.line([(16, y_offset), (label_width - 16, y_offset)], fill="black", width=1)
+    y_offset += 25
+        
     # Shipping code section - only if not empty
     if shipping_code and shipping_code.strip():
         shipping_label_text = "RESI PENGIRIMAN:"
@@ -363,11 +374,11 @@ def generate_shipping_label(sender_name: str, sender_phone: str, recipient_name:
         shipping_label_width = shipping_label_bbox[2] - shipping_label_bbox[0]
         shipping_label_x = (label_width - shipping_label_width) // 2
         draw.text((shipping_label_x, y_offset), shipping_label_text, fill="black", font=font_small)
-        y_offset += 18
+        y_offset += 28
         
-        # Shipping code centered
+        # Shipping code centered with better formatting
         if len(shipping_code) > 15:
-            # Split long codes
+            # Split long codes intelligently
             mid_point = len(shipping_code) // 2
             break_point = mid_point
             for i in range(max(0, mid_point-3), min(len(shipping_code), mid_point+4)):
@@ -382,32 +393,37 @@ def generate_shipping_label(sender_name: str, sender_phone: str, recipient_name:
             line1_width = line1_bbox[2] - line1_bbox[0]
             line1_x = (label_width - line1_width) // 2
             draw.text((line1_x, y_offset), line1, fill="black", font=font_medium)
-            y_offset += 16
+            y_offset += 25
             
             line2_bbox = draw.textbbox((0, 0), line2, font=font_medium)
             line2_width = line2_bbox[2] - line2_bbox[0]
             line2_x = (label_width - line2_width) // 2
             draw.text((line2_x, y_offset), line2, fill="black", font=font_medium)
-            y_offset += 20
+            y_offset += 35
         else:
-            shipping_code_spaced = " ".join(shipping_code)
+            # For shorter codes, add spacing for readability
+            shipping_code_spaced = " ".join(shipping_code) if len(shipping_code) <= 10 else shipping_code
             shipping_code_bbox = draw.textbbox((0, 0), shipping_code_spaced, font=font_medium)
             shipping_code_width = shipping_code_bbox[2] - shipping_code_bbox[0]
             shipping_code_x = (label_width - shipping_code_width) // 2
             draw.text((shipping_code_x, y_offset), shipping_code_spaced, fill="black", font=font_medium)
-            y_offset += 25
-        
-        # Add separator after shipping code
-        draw.line([(8, y_offset), (label_width - 8, y_offset)], fill="black", width=1)
-        y_offset += 15
-        
-        # Final separator line after shipping code
-        draw.line([(8, y_offset), (label_width - 8, y_offset)], fill="black", width=2)
-        y_offset += 12
+            y_offset += 35
     
-    # Save the image
+    # Convert RGB to grayscale first
+    img_gray = img.convert('L')
+    
+    # Apply threshold to ensure pure black and white
+    threshold = 128
+    img_bw = img_gray.point(lambda x: 0 if x < threshold else 255, mode='1')
+    
+    # Resize back to original thermal printer resolution (203px width)
+    img_final = img_bw.resize((203, int(300 * img_bw.height / img_bw.width)), Image.Resampling.LANCZOS)
+    
+    # Save with optimal settings for thermal printer
     filename = f"shipping_label_{label_id}_{shipping_code or 'no_code'}.png"
     filepath = os.path.join(labels_dir, filename)
-    img.save(filepath, dpi=(300, 300))
+    
+    # Save as 1-bit PNG for maximum sharpness on thermal printer
+    img_final.save(filepath, "PNG", optimize=True, bits=1)
     
     return filepath

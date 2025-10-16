@@ -22,6 +22,7 @@ class Label(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     sender_name = Column(String(255), nullable=False)
+    sender_phone = Column(String(20), nullable=False)
     shipping_code = Column(String(100), unique=True, nullable=False)
     image_path = Column(Text, nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
