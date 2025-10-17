@@ -62,7 +62,7 @@
                     size="large"
                     style="width: 100%;"
                   >
-                    {{ labelStore.loading ? 'Membuat Label...' : 'Generate QR Code' }}
+                    {{ labelStore.loading ? 'Membuat Label...' : 'Buat QR' }}
                   </el-button>
                 </el-col>
                 <el-col :xs="12" :sm="8" :md="8">
