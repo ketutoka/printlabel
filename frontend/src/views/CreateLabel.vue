@@ -52,29 +52,32 @@
             </el-form-item>
 
             <el-form-item>
-              <el-row :gutter="10">
-                <el-col :xs="24" :sm="8" :md="8">
-                  <el-button
-                    type="primary"
-                    :loading="labelStore.loading"
-                    @click="handleCreateLabel"
-                    size="large"
-                    style="width: 100%;"
-                  >
-                    {{ labelStore.loading ? 'Membuat Label...' : 'Buat QR' }}
-                  </el-button>
-                </el-col>
-                <el-col :xs="12" :sm="8" :md="8">
-                  <el-button @click="resetForm" style="width: 100%;" size="large">
-                    Reset
-                  </el-button>
-                </el-col>
-                <el-col :xs="12" :sm="8" :md="8">
-                  <el-button type="info" @click="$router.push('/dashboard')" style="width: 100%;" size="large">
-                    Kembali
-                  </el-button>
-                </el-col>
-              </el-row>
+              <div class="button-group">
+                <el-button
+                  type="primary"
+                  :loading="labelStore.loading"
+                  @click="handleCreateLabel"
+                  size="large"
+                  class="action-button primary-button"
+                >
+                  {{ labelStore.loading ? 'Membuat Label...' : '🏷️ Buat QR' }}
+                </el-button>
+                <el-button 
+                  @click="resetForm" 
+                  size="large"
+                  class="action-button secondary-button"
+                >
+                  🔄 Reset
+                </el-button>
+                <el-button 
+                  type="info" 
+                  @click="$router.push('/dashboard')" 
+                  size="large"
+                  class="action-button info-button"
+                >
+                  ⬅️ Kembali
+                </el-button>
+              </div>
             </el-form-item>
           </el-form>
 
@@ -520,6 +523,70 @@ const formatDate = (dateString) => {
   width: 100%;
 }
 
+/* Button Group Layout */
+.button-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* Desktop/Tablet Layout */
+@media (min-width: 769px) {
+  .button-group {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .action-button {
+    flex: 1;
+    max-width: 180px;
+  }
+}
+
+.action-button {
+  flex: 1;
+  min-width: 120px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.primary-button {
+  background: linear-gradient(135deg, #409EFF, #67C23A);
+  border: none;
+  color: white;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+}
+
+.primary-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(64, 158, 255, 0.4);
+}
+
+.secondary-button {
+  background: #F5F7FA;
+  border: 2px solid #E4E7ED;
+  color: #606266;
+}
+
+.secondary-button:hover {
+  background: #E4E7ED;
+  border-color: #C0C4CC;
+}
+
+.info-button {
+  background: #909399;
+  border: none;
+  color: white;
+}
+
+.info-button:hover {
+  background: #82868A;
+}
+
 .card-header {
   text-align: center;
   color: #409EFF;
@@ -696,6 +763,21 @@ const formatDate = (dateString) => {
     box-sizing: border-box;
   }
   
+  /* Button Group Mobile Layout */
+  .button-group {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .action-button {
+    width: 100% !important;
+    min-width: unset;
+    margin-bottom: 8px;
+    font-size: 14px;
+    padding: 12px 16px;
+    min-height: 44px;
+  }
+  
   .preview-info {
     padding: 12px;
   }
@@ -716,6 +798,17 @@ const formatDate = (dateString) => {
 @media (max-width: 576px) {
   .create-label-container {
     padding: 3px;
+  }
+  
+  /* Compact button layout for small screens */
+  .button-group {
+    gap: 6px;
+  }
+  
+  .action-button {
+    font-size: 13px;
+    padding: 10px 12px;
+    min-height: 42px;
   }
   
   .card-header h2 {

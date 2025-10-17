@@ -92,30 +92,33 @@
         </el-form-item>
 
         <el-form-item>
-          <el-row :gutter="10" style="margin-top: 20px;">
-            <el-col :xs="24" :sm="12" :md="12">
-              <el-button 
-                type="primary" 
-                @click="generateShippingLabel"
-                :loading="shippingStore.loading"
-                size="large"
-                style="width: 100%;"
-              >
-                <span v-if="!shippingStore.loading">🏷️ Buat Label</span>
-                <span v-else>⏳ Membuat Label...</span>
-              </el-button>
-            </el-col>
-            <el-col :xs="24" :sm="12" :md="12">
-              <el-button 
-                type="info" 
-                @click="backToDashboard"
-                size="large"
-                style="width: 100%;"
-              >
-                ← Kembali
-              </el-button>
-            </el-col>
-          </el-row>          
+          <div class="shipping-button-group">
+            <el-button 
+              type="primary" 
+              @click="generateShippingLabel"
+              :loading="shippingStore.loading"
+              size="large"
+              class="shipping-action-button shipping-primary-button"
+            >
+              <span v-if="!shippingStore.loading">🏷️ Buat Label Pengiriman</span>
+              <span v-else>⏳ Membuat Label...</span>
+            </el-button>
+            <el-button 
+              @click="resetShippingForm" 
+              size="large"
+              class="shipping-action-button shipping-secondary-button"
+            >
+              🔄 Reset Form
+            </el-button>
+            <el-button 
+              type="info" 
+              @click="backToDashboard"
+              size="large"
+              class="shipping-action-button shipping-info-button"
+            >
+              ⬅️ Kembali
+            </el-button>
+          </div>          
         </el-form-item>
       </el-form>
 
@@ -525,6 +528,27 @@ const backToDashboard = () => {
   router.push('/dashboard')
 }
 
+const resetShippingForm = () => {
+  // Reset all form fields
+  Object.keys(shippingForm).forEach(key => {
+    if (key === 'sender_name' && userStore.user?.name) {
+      shippingForm[key] = userStore.user.name
+    } else if (key === 'sender_phone' && userStore.user?.phone) {
+      shippingForm[key] = userStore.user.phone
+    } else {
+      shippingForm[key] = ''
+    }
+  })
+  
+  // Clear any validation errors
+  if (shippingFormRef.value) {
+    shippingFormRef.value.clearValidate()
+  }
+  
+  shippingStore.clearError()
+  ElMessage.success('Form berhasil direset!')
+}
+
 const resetForm = () => {
   // Keep sender info, reset only recipient and shipping code
   shippingForm.recipient_name = ''
@@ -550,6 +574,70 @@ watch(showActualPreview, (newValue) => {
   margin: 0 auto;
   padding: 10px;
   min-height: 100vh;
+}
+
+/* Shipping Button Group Layout */
+.shipping-button-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  margin-top: 20px;
+}
+
+/* Desktop/Tablet Layout */
+@media (min-width: 769px) {
+  .shipping-button-group {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .shipping-action-button {
+    flex: 1;
+    max-width: 200px;
+  }
+}
+
+.shipping-action-button {
+  flex: 1;
+  min-width: 120px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.shipping-primary-button {
+  background: linear-gradient(135deg, #409EFF, #67C23A);
+  border: none;
+  color: white;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+}
+
+.shipping-primary-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(64, 158, 255, 0.4);
+}
+
+.shipping-secondary-button {
+  background: #F5F7FA;
+  border: 2px solid #E4E7ED;
+  color: #606266;
+}
+
+.shipping-secondary-button:hover {
+  background: #E4E7ED;
+  border-color: #C0C4CC;
+}
+
+.shipping-info-button {
+  background: #909399;
+  border: none;
+  color: white;
+}
+
+.shipping-info-button:hover {
+  background: #82868A;
 }
 
 .card-header {
@@ -667,6 +755,22 @@ watch(showActualPreview, (newValue) => {
     box-sizing: border-box;
   }
   
+  /* Shipping Button Group Mobile Layout */
+  .shipping-button-group {
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 15px;
+  }
+  
+  .shipping-action-button {
+    width: 100% !important;
+    min-width: unset;
+    margin-bottom: 8px;
+    font-size: 14px;
+    padding: 12px 16px;
+    min-height: 44px;
+  }
+  
   :deep(.el-divider__text) {
     font-size: 0.85rem;
     padding: 0 15px;
@@ -684,6 +788,18 @@ watch(showActualPreview, (newValue) => {
   
   .card-header {
     font-size: 0.95rem;
+  }
+  
+  /* Compact shipping button layout for small screens */
+  .shipping-button-group {
+    gap: 6px;
+    margin-top: 12px;
+  }
+  
+  .shipping-action-button {
+    font-size: 13px;
+    padding: 10px 12px;
+    min-height: 42px;
   }
   
   .preview-content {
