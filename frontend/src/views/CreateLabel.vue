@@ -1,7 +1,7 @@
 <template>
   <div class="create-label-container">
     <el-row justify="center">
-      <el-col :xs="24" :sm="20" :md="16" :lg="14" :xl="12">
+      <el-col :xs="24" :sm="22" :md="18" :lg="16" :xl="14">
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
@@ -507,9 +507,10 @@ const formatDate = (dateString) => {
 
 <style scoped>
 .create-label-container {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 0 15px;
+  padding: 10px;
+  min-height: 100vh;
 }
 
 .card-header {
@@ -608,10 +609,12 @@ const formatDate = (dateString) => {
   background-color: white;
 }
 
-/* Mobile optimizations */
+/* Mobile Responsiveness - Full Width */
 @media (max-width: 768px) {
   .create-label-container {
-    padding: 0 10px;
+    padding: 5px;
+    margin: 0;
+    max-width: 100%;
   }
   
   .card-header h2 {
@@ -622,8 +625,57 @@ const formatDate = (dateString) => {
     font-size: 0.8rem;
   }
   
+  :deep(.el-card) {
+    margin: 0;
+    border-radius: 8px;
+  }
+  
+  :deep(.el-card__body) {
+    padding: 15px;
+  }
+  
+  :deep(.el-form-item) {
+    margin-bottom: 18px;
+  }
+  
+  :deep(.el-form-item__label) {
+    font-size: 14px;
+    font-weight: 500;
+    width: 90px !important;
+  }
+  
+  :deep(.el-form-item__content) {
+    flex: 1;
+  }
+  
+  :deep(.el-input) {
+    width: 100%;
+  }
+  
+  :deep(.el-input__wrapper) {
+    width: 100%;
+  }
+  
+  :deep(.el-input__inner) {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px 15px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  :deep(.el-input-group__append .el-button) {
+    padding: 12px 15px;
+    font-size: 14px;
+  }
+  
+  :deep(.el-button) {
+    font-size: 14px;
+    padding: 12px 15px;
+    box-sizing: border-box;
+  }
+  
   .preview-info {
-    padding: 10px;
+    padding: 12px;
   }
   
   .preview-info h3 {
@@ -631,21 +683,50 @@ const formatDate = (dateString) => {
   }
   
   .preview-info p {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
   }
   
   .actual-image-container {
-    padding: 10px;
+    padding: 15px;
   }
 }
 
 @media (max-width: 576px) {
   .create-label-container {
-    padding: 0 5px;
+    padding: 3px;
   }
   
   .card-header h2 {
     font-size: 1.2rem;
+  }
+  
+  .card-header p {
+    font-size: 0.75rem;
+  }
+  
+  :deep(.el-card__body) {
+    padding: 12px;
+  }
+  
+  :deep(.el-form-item__label) {
+    font-size: 13px;
+    margin-bottom: 5px;
+    width: 80px !important;
+  }
+  
+  :deep(.el-input__inner) {
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+  
+  :deep(.el-input-group__append .el-button) {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  :deep(.el-button) {
+    font-size: 13px;
+    padding: 10px 12px;
   }
   
   .label-preview {
@@ -659,6 +740,98 @@ const formatDate = (dateString) => {
   
   .qr-placeholder p {
     font-size: 20px;
+  }
+  
+  .preview-info {
+    padding: 10px;
+  }
+  
+  .preview-info h3 {
+    font-size: 0.9rem;
+  }
+  
+  .preview-info p {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .create-label-container {
+    padding: 2px;
+  }
+  
+  :deep(.el-card__body) {
+    padding: 10px;
+  }
+  
+  :deep(.el-form-item__label) {
+    width: 70px !important;
+    font-size: 12px;
+  }
+  
+  :deep(.el-input-group__append .el-button) {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  
+  .dialog-footer :deep(.el-row) {
+    margin: 0 -5px;
+  }
+  
+  .dialog-footer :deep(.el-col) {
+    padding: 0 5px;
+    margin-bottom: 10px;
+  }
+}
+
+/* Form label positioning for mobile */
+@media (max-width: 576px) {
+  :deep(.el-form-item__label) {
+    padding: 0 !important;
+    line-height: 1.4;
+  }
+  
+  :deep(.el-form-item__content) {
+    margin-left: 0 !important;
+  }
+}
+
+/* Dialog responsiveness */
+@media (max-width: 768px) {
+  :deep(.el-dialog) {
+    margin: 10px !important;
+    max-height: calc(100vh - 20px);
+    width: calc(100vw - 20px) !important;
+  }
+  
+  :deep(.el-dialog__body) {
+    padding: 15px;
+    max-height: calc(100vh - 150px);
+    overflow-y: auto;
+  }
+  
+  :deep(.el-dialog__footer) {
+    padding: 15px;
+  }
+}
+
+/* Landscape mobile */
+@media (max-width: 896px) and (orientation: landscape) and (max-height: 500px) {
+  .create-label-container {
+    padding: 3px;
+  }
+  
+  :deep(.el-card__body) {
+    padding: 8px;
+  }
+  
+  .card-header h2 {
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+  }
+  
+  .card-header p {
+    font-size: 0.7rem;
   }
 }
 </style>

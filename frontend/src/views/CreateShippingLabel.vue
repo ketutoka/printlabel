@@ -546,9 +546,10 @@ watch(showActualPreview, (newValue) => {
 
 <style scoped>
 .create-shipping-label-container {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 20px 15px;
+  padding: 10px;
+  min-height: 100vh;
 }
 
 .card-header {
@@ -588,10 +589,12 @@ watch(showActualPreview, (newValue) => {
   padding: 15px 20px;
 }
 
-/* Mobile optimizations */
+/* Mobile Responsiveness - Full Width */
 @media (max-width: 768px) {
   .create-shipping-label-container {
-    padding: 15px 10px;
+    padding: 5px;
+    margin: 0;
+    max-width: 100%;
   }
   
   .card-header {
@@ -604,6 +607,62 @@ watch(showActualPreview, (newValue) => {
     max-height: 70vh;
   }
   
+  :deep(.el-card) {
+    margin: 0;
+    border-radius: 8px;
+  }
+  
+  :deep(.el-card__body) {
+    padding: 15px;
+  }
+  
+  :deep(.el-form-item) {
+    margin-bottom: 18px;
+  }
+  
+  :deep(.el-form-item__label) {
+    font-size: 14px;
+    font-weight: 500;
+    width: 120px !important;
+  }
+  
+  :deep(.el-form-item__content) {
+    flex: 1;
+  }
+  
+  :deep(.el-input) {
+    width: 100%;
+  }
+  
+  :deep(.el-input__wrapper) {
+    width: 100%;
+  }
+  
+  :deep(.el-input__inner) {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px 15px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  :deep(.el-textarea__inner) {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 12px 15px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  :deep(.el-input-group__append .el-button) {
+    padding: 12px 15px;
+    font-size: 14px;
+  }
+  
+  :deep(.el-button) {
+    font-size: 14px;
+    padding: 12px 15px;
+    box-sizing: border-box;
+  }
+  
   :deep(.el-divider__text) {
     font-size: 0.85rem;
     padding: 0 15px;
@@ -612,19 +671,11 @@ watch(showActualPreview, (newValue) => {
   :deep(.el-card__header) {
     padding: 10px 15px;
   }
-  
-  :deep(.el-card__body) {
-    padding: 12px 15px;
-  }
-  
-  :deep(.el-form-item) {
-    margin-bottom: 15px;
-  }
 }
 
 @media (max-width: 576px) {
   .create-shipping-label-container {
-    padding: 10px 5px;
+    padding: 3px;
   }
   
   .card-header {
@@ -633,6 +684,36 @@ watch(showActualPreview, (newValue) => {
   
   .preview-content {
     max-height: 75vh;
+  }
+  
+  :deep(.el-card__body) {
+    padding: 12px;
+  }
+  
+  :deep(.el-form-item__label) {
+    font-size: 13px;
+    margin-bottom: 5px;
+    width: 110px !important;
+  }
+  
+  :deep(.el-input__inner) {
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+  
+  :deep(.el-textarea__inner) {
+    font-size: 16px;
+    padding: 10px 12px;
+  }
+  
+  :deep(.el-input-group__append .el-button) {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  :deep(.el-button) {
+    font-size: 13px;
+    padding: 10px 12px;
   }
   
   :deep(.el-divider__text) {
@@ -645,40 +726,19 @@ watch(showActualPreview, (newValue) => {
     font-size: 0.9rem;
   }
   
-  :deep(.el-card__body) {
-    padding: 10px;
-  }
-  
   :deep(.el-card__body p) {
     font-size: 0.85rem;
     margin: 3px 0;
   }
   
   :deep(.el-form-item) {
-    margin-bottom: 12px;
-  }
-  
-  :deep(.el-form-item__label) {
-    font-size: 0.9rem;
-  }
-  
-  :deep(.el-input__inner) {
-    font-size: 0.9rem;
-  }
-  
-  :deep(.el-textarea__inner) {
-    font-size: 0.9rem;
-  }
-  
-  :deep(.el-button) {
-    font-size: 0.85rem;
+    margin-bottom: 15px;
   }
 }
 
-/* Very small screens */
 @media (max-width: 480px) {
   .create-shipping-label-container {
-    padding: 5px;
+    padding: 2px;
   }
   
   :deep(.el-card) {
@@ -686,11 +746,76 @@ watch(showActualPreview, (newValue) => {
   }
   
   :deep(.el-card__body) {
-    padding: 8px;
+    padding: 10px;
   }
   
   :deep(.el-form-item__label) {
-    font-size: 0.85rem;
+    width: 100px !important;
+    font-size: 12px;
+  }
+  
+  :deep(.el-input-group__append .el-button) {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  
+  :deep(.el-input-group__append) {
+    border-radius: 0 4px 4px 0;
+  }
+}
+
+/* Form label positioning for mobile */
+@media (max-width: 576px) {
+  :deep(.el-form-item__label) {
+    padding: 0 !important;
+    line-height: 1.4;
+  }
+  
+  :deep(.el-form-item__content) {
+    margin-left: 0 !important;
+  }
+}
+
+/* Dialog responsiveness */
+@media (max-width: 768px) {
+  :deep(.el-dialog) {
+    margin: 10px !important;
+    max-height: calc(100vh - 20px);
+    width: calc(100vw - 20px) !important;
+  }
+  
+  :deep(.el-dialog__body) {
+    padding: 15px;
+    max-height: calc(100vh - 150px);
+    overflow-y: auto;
+  }
+  
+  :deep(.el-dialog__footer) {
+    padding: 15px;
+  }
+}
+
+/* Landscape mobile */
+@media (max-width: 896px) and (orientation: landscape) and (max-height: 500px) {
+  .create-shipping-label-container {
+    padding: 3px;
+  }
+  
+  :deep(.el-card__body) {
+    padding: 8px;
+  }
+  
+  .card-header {
+    font-size: 0.9rem;
+  }
+  
+  :deep(.el-divider__text) {
+    font-size: 0.75rem;
+    padding: 0 8px;
+  }
+  
+  :deep(.el-form-item) {
+    margin-bottom: 10px;
   }
 }
 </style>

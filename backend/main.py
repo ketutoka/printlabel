@@ -439,6 +439,138 @@ def preview_shipping_label_image(
         filename=f"preview_shipping_label_{label.shipping_code}.png"
     )
 
+# Delete endpoints - Bulk operations MUST come before parameterized routes
+@app.delete("/labels/bulk")
+def bulk_delete_simple_labels(
+    label_ids: list[int],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from crud import delete_label
+    
+    results = {
+        "deleted_count": 0,
+        "failed_count": 0,
+        "deleted_files": [],
+        "errors": []
+    }
+    
+    for label_id in label_ids:
+        try:
+            image_path = delete_label(db, label_id, current_user.id)
+            
+            if image_path:
+                results["deleted_count"] += 1
+                results["deleted_files"].append(image_path)
+                
+                # Delete image file if exists
+                if os.path.exists(image_path):
+                    try:
+                        os.remove(image_path)
+                    except OSError as e:
+                        print(f"Warning: Could not delete image file {image_path}: {e}")
+            else:
+                results["failed_count"] += 1
+                results["errors"].append(f"Label {label_id} not found")
+                
+        except Exception as e:
+            results["failed_count"] += 1
+            results["errors"].append(f"Label {label_id}: {str(e)}")
+    
+    return {
+        "message": f"Bulk delete completed. {results['deleted_count']} deleted, {results['failed_count']} failed.",
+        **results
+    }
+
+@app.delete("/shipping-labels/bulk")
+def bulk_delete_shipping_labels(
+    label_ids: list[int],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from crud import delete_shipping_label
+    
+    results = {
+        "deleted_count": 0,
+        "failed_count": 0,
+        "deleted_files": [],
+        "errors": []
+    }
+    
+    for label_id in label_ids:
+        try:
+            image_path = delete_shipping_label(db, label_id, current_user.id)
+            
+            if image_path:
+                results["deleted_count"] += 1
+                results["deleted_files"].append(image_path)
+                
+                # Delete image file if exists
+                if os.path.exists(image_path):
+                    try:
+                        os.remove(image_path)
+                    except OSError as e:
+                        print(f"Warning: Could not delete image file {image_path}: {e}")
+            else:
+                results["failed_count"] += 1
+                results["errors"].append(f"Shipping label {label_id} not found")
+                
+        except Exception as e:
+            results["failed_count"] += 1
+            results["errors"].append(f"Shipping label {label_id}: {str(e)}")
+    
+    return {
+        "message": f"Bulk delete completed. {results['deleted_count']} deleted, {results['failed_count']} failed.",
+        **results
+    }
+
+# Single delete endpoints - MUST come after bulk endpoints
+@app.delete("/labels/{label_id}")
+def delete_simple_label(
+    label_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from crud import delete_label
+    
+    # Delete from database and get image path
+    image_path = delete_label(db, label_id, current_user.id)
+    
+    if not image_path:
+        raise HTTPException(status_code=404, detail="Label not found")
+    
+    # Delete image file if exists
+    if image_path and os.path.exists(image_path):
+        try:
+            os.remove(image_path)
+        except OSError as e:
+            print(f"Warning: Could not delete image file {image_path}: {e}")
+    
+    return {"message": "Label deleted successfully", "deleted_file": image_path}
+
+@app.delete("/shipping-labels/{label_id}")
+def delete_shipping_label_endpoint(
+    label_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    from crud import delete_shipping_label
+    
+    # Delete from database and get image path
+    image_path = delete_shipping_label(db, label_id, current_user.id)
+    
+    if not image_path:
+        raise HTTPException(status_code=404, detail="Shipping label not found")
+    
+    # Delete image file if exists
+    if image_path and os.path.exists(image_path):
+        try:
+            os.remove(image_path)
+        except OSError as e:
+            print(f"Warning: Could not delete image file {image_path}: {e}")
+    
+    return {"message": "Shipping label deleted successfully", "deleted_file": image_path}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8002)

@@ -62,8 +62,53 @@ onMounted(() => {
   box-sizing: border-box;
 }
 
-body {
+html, body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* Global mobile optimizations */
+@media (max-width: 768px) {
+  /* Prevent horizontal scrolling on mobile */
+  html, body, #app {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  
+  /* Make all containers full width */
+  .el-container,
+  .el-main,
+  .el-card,
+  .el-form {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* Reset any margin/padding that might create gaps */
+  .el-main {
+    padding: 8px !important;
+  }
+  
+  /* Ensure form inputs use full available width */
+  .el-form-item,
+  .el-input,
+  .el-textarea,
+  .el-select {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  /* Prevent iOS zoom on input focus */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+  
+  /* Make buttons touch-friendly */
+  .el-button {
+    min-height: 44px;
+    font-size: 16px;
+  }
 }
 
 .header-content {
@@ -81,5 +126,22 @@ body {
 .el-main {
   padding: 20px;
   background-color: #f5f5f5;
+}
+
+/* Mobile header adjustments */
+@media (max-width: 768px) {
+  .header-content h2 {
+    font-size: 18px;
+  }
+  
+  .user-info span {
+    font-size: 14px;
+    margin-right: 8px;
+  }
+  
+  .user-info .el-button {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
 }
 </style>

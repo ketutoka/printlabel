@@ -93,6 +93,58 @@ export const useLabelStore = defineStore('label', {
 
     setCurrentLabel(label) {
       this.currentLabel = label
+    },
+
+    async deleteLabel(labelId) {
+      this.loading = true
+      this.error = null
+      
+      try {
+        const response = await api.delete(`/labels/${labelId}`)
+        
+        // Remove from local state
+        this.labels = this.labels.filter(label => label.id !== labelId)
+        
+        // Clear current label if it was deleted
+        if (this.currentLabel && this.currentLabel.id === labelId) {
+          this.currentLabel = null
+        }
+        
+        return { success: true, message: response.data.message }
+      } catch (error) {
+        this.error = error.response?.data?.detail || 'Gagal menghapus label'
+        return { success: false, error: this.error }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    async bulkDeleteLabels(labelIds) {
+      this.loading = true
+      this.error = null
+      
+      try {
+        const response = await api.delete('/labels/bulk', { data: labelIds })
+        
+        // Remove deleted labels from local state
+        this.labels = this.labels.filter(label => !labelIds.includes(label.id))
+        
+        // Clear current label if it was among deleted ones
+        if (this.currentLabel && labelIds.includes(this.currentLabel.id)) {
+          this.currentLabel = null
+        }
+        
+        return { 
+          success: true, 
+          message: response.data.message,
+          results: response.data
+        }
+      } catch (error) {
+        this.error = error.response?.data?.detail || 'Gagal menghapus label'
+        return { success: false, error: this.error }
+      } finally {
+        this.loading = false
+      }
     }
   }
 })

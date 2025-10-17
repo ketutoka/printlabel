@@ -82,6 +82,50 @@ export const useShippingStore = defineStore('shipping', () => {
     }
   }
 
+  const deleteShippingLabel = async (labelId) => {
+    try {
+      loading.value = true
+      error.value = ''
+      
+      const response = await api.delete(`/shipping-labels/${labelId}`)
+      
+      // Remove from local state
+      shippingLabels.value = shippingLabels.value.filter(label => label.id !== labelId)
+      
+      return { success: true, message: response.data.message }
+    } catch (err) {
+      console.error('Delete shipping label error:', err)
+      error.value = err.response?.data?.detail || 'Gagal menghapus label pengiriman'
+      return { success: false, error: error.value }
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const bulkDeleteShippingLabels = async (labelIds) => {
+    try {
+      loading.value = true
+      error.value = ''
+      
+      const response = await api.delete('/shipping-labels/bulk', { data: labelIds })
+      
+      // Remove deleted labels from local state
+      shippingLabels.value = shippingLabels.value.filter(label => !labelIds.includes(label.id))
+      
+      return { 
+        success: true, 
+        message: response.data.message,
+        results: response.data
+      }
+    } catch (err) {
+      console.error('Bulk delete shipping labels error:', err)
+      error.value = err.response?.data?.detail || 'Gagal menghapus label pengiriman'
+      return { success: false, error: error.value }
+    } finally {
+      loading.value = false
+    }
+  }
+
   const clearError = () => {
     error.value = ''
   }
@@ -95,6 +139,8 @@ export const useShippingStore = defineStore('shipping', () => {
     getShippingLabels,
     getShippingLabelForPrint,
     getPreviewUrl,
+    deleteShippingLabel,
+    bulkDeleteShippingLabels,
     clearError
   }
 })

@@ -140,7 +140,42 @@
           </div>
 
           <div v-else>
-            <el-table :data="paginatedLabels" stripe>
+            <!-- Bulk Actions Bar -->
+            <div v-if="selectedLabels.length > 0" class="bulk-actions-bar">
+              <el-alert
+                :title="`${selectedLabels.length} label dipilih`"
+                type="info"
+                :closable="false"
+                show-icon
+              >
+                <template #default>
+                  <div class="bulk-actions">
+                    <el-button 
+                      type="danger" 
+                      size="small" 
+                      @click="bulkDeleteLabels"
+                      :loading="labelStore.loading || shippingStore.loading"
+                    >
+                      <el-icon><Delete /></el-icon>
+                      Hapus Terpilih ({{ selectedLabels.length }})
+                    </el-button>
+                    <el-button 
+                      size="small" 
+                      @click="clearSelection"
+                    >
+                      Batal Pilihan
+                    </el-button>
+                  </div>
+                </template>
+              </el-alert>
+            </div>
+
+            <el-table 
+              :data="paginatedLabels" 
+              stripe 
+              @selection-change="handleSelectionChange"
+            >
+              <el-table-column type="selection" width="55" />
               <el-table-column label="Aksi" width="60" fixed="left">
                 <template #default="scope">
                   <el-dropdown @command="(command) => handleActionCommand(command, scope.row)" placement="bottom-start">
@@ -161,6 +196,10 @@
                         <el-dropdown-item command="print">
                           <el-icon><Printer /></el-icon>
                           Print Label
+                        </el-dropdown-item>
+                        <el-dropdown-item command="delete" style="color: #F56C6C;" divided>
+                          <el-icon><Delete /></el-icon>
+                          Hapus Label
                         </el-dropdown-item>
                       </el-dropdown-menu>
                     </template>
@@ -281,7 +320,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, Setting, SwitchButton, ArrowDown, View, Printer, Search, More } from '@element-plus/icons-vue'
+import { User, Setting, SwitchButton, ArrowDown, View, Printer, Search, More, Delete } from '@element-plus/icons-vue'
 import { useLabelStore } from '../stores/label'
 import { useShippingStore } from '../stores/shipping'
 import { useUserStore } from '../stores/user'
@@ -302,6 +341,10 @@ const previewImageUrl = ref('')
 const searchQuery = ref('')
 const currentPage = ref(1)
 const pageSize = ref(10)
+
+// Selection state for bulk operations
+const selectedLabels = ref([])
+const isAllSelected = ref(false)
 
 const recentLabels = computed(() => {
   // Gabungkan simple labels dan shipping labels
@@ -408,6 +451,9 @@ const handleActionCommand = (command, label) => {
       break
     case 'print':
       printLabel(label)
+      break
+    case 'delete':
+      deleteLabel(label)
       break
     default:
       console.warn('Unknown command:', command)
@@ -617,6 +663,140 @@ const handleLogout = async () => {
   }
 }
 
+const deleteLabel = async (label) => {
+  try {
+    const labelCode = label.shipping_code || `Label #${label.id}`
+    
+    await ElMessageBox.confirm(
+      `Apakah Anda yakin ingin menghapus "${labelCode}"? Tindakan ini tidak dapat dibatalkan.`,
+      'Konfirmasi Hapus Label',
+      {
+        confirmButtonText: 'Ya, Hapus',
+        cancelButtonText: 'Batal',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      }
+    )
+    
+    let result
+    
+    // Delete based on label type
+    if (label.type === 'shipping') {
+      result = await shippingStore.deleteShippingLabel(label.id)
+    } else {
+      result = await labelStore.deleteLabel(label.id)
+    }
+    
+    if (result.success) {
+      ElMessage.success(`Label "${labelCode}" berhasil dihapus!`)
+      // Clear selection if deleted item was selected
+      selectedLabels.value = selectedLabels.value.filter(selected => selected.id !== label.id)
+    } else {
+      ElMessage.error(result.error || 'Gagal menghapus label')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('Error deleting label:', error)
+      ElMessage.error('Terjadi kesalahan saat menghapus label')
+    }
+    // If error is 'cancel', user cancelled the action, so do nothing
+  }
+}
+
+const bulkDeleteLabels = async () => {
+  try {
+    if (selectedLabels.value.length === 0) {
+      ElMessage.warning('Belum ada label yang dipilih')
+      return
+    }
+    
+    const labelCount = selectedLabels.value.length
+    const labelText = labelCount === 1 ? 'label' : 'label'
+    
+    await ElMessageBox.confirm(
+      `Apakah Anda yakin ingin menghapus ${labelCount} ${labelText} terpilih? Tindakan ini tidak dapat dibatalkan.`,
+      'Konfirmasi Hapus Massal',
+      {
+        confirmButtonText: 'Ya, Hapus Semua',
+        cancelButtonText: 'Batal',
+        type: 'warning',
+        confirmButtonClass: 'el-button--danger'
+      }
+    )
+    
+    // Separate labels by type for bulk operations
+    const simpleLabels = selectedLabels.value.filter(label => label.type === 'simple')
+    const shippingLabels = selectedLabels.value.filter(label => label.type === 'shipping')
+    
+    let totalSuccess = 0
+    let totalErrors = 0
+    const allErrors = []
+    
+    // Bulk delete simple labels
+    if (simpleLabels.length > 0) {
+      const simpleIds = simpleLabels.map(label => label.id)
+      const result = await labelStore.bulkDeleteLabels(simpleIds)
+      
+      if (result.success) {
+        totalSuccess += result.results.deleted_count
+        totalErrors += result.results.failed_count
+        if (result.results.errors.length > 0) {
+          allErrors.push(...result.results.errors)
+        }
+      } else {
+        totalErrors += simpleLabels.length
+        allErrors.push(`Simple labels: ${result.error}`)
+      }
+    }
+    
+    // Bulk delete shipping labels  
+    if (shippingLabels.length > 0) {
+      const shippingIds = shippingLabels.map(label => label.id)
+      const result = await shippingStore.bulkDeleteShippingLabels(shippingIds)
+      
+      if (result.success) {
+        totalSuccess += result.results.deleted_count
+        totalErrors += result.results.failed_count
+        if (result.results.errors.length > 0) {
+          allErrors.push(...result.results.errors)
+        }
+      } else {
+        totalErrors += shippingLabels.length
+        allErrors.push(`Shipping labels: ${result.error}`)
+      }
+    }
+    
+    // Clear selection after deletion attempt
+    selectedLabels.value = []
+    
+    // Show results
+    if (totalSuccess === labelCount) {
+      ElMessage.success(`${totalSuccess} label berhasil dihapus!`)
+    } else if (totalSuccess > 0) {
+      ElMessage.warning(`${totalSuccess} label berhasil dihapus, ${totalErrors} label gagal dihapus`)
+      if (allErrors.length > 0) {
+        console.error('Delete errors:', allErrors)
+      }
+    } else {
+      ElMessage.error(`Gagal menghapus semua label. Error: ${allErrors.slice(0, 3).join(', ')}${allErrors.length > 3 ? '...' : ''}`)
+    }
+    
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('Error bulk deleting labels:', error)
+      ElMessage.error('Terjadi kesalahan saat menghapus label')
+    }
+  }
+}
+
+const handleSelectionChange = (selection) => {
+  selectedLabels.value = selection
+}
+
+const clearSelection = () => {
+  selectedLabels.value = []
+}
+
 const handleCommand = (command) => {
   switch (command) {
     case 'profile':
@@ -633,6 +813,7 @@ const handleCommand = (command) => {
 .dashboard-container {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 10px;
 }
 
 .user-header {
@@ -684,6 +865,12 @@ const handleCommand = (command) => {
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {
+  .dashboard-container {
+    padding: 5px;
+    margin: 0;
+    max-width: 100%;
+  }
+  
   .user-info h3 {
     font-size: 16px;
   }
@@ -699,15 +886,111 @@ const handleCommand = (command) => {
   .user-header {
     padding: 8px 0;
   }
+  
+  .card-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  
+  .header-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .header-actions .el-input {
+    width: 100% !important;
+  }
+  
+  .action-card {
+    height: auto;
+    margin-bottom: 15px;
+  }
+  
+  .card-content {
+    height: auto;
+  }
+  
+  :deep(.el-table .el-table-column.is-left .cell) {
+    font-size: 12px;
+  }
+  
+  .pagination-container {
+    overflow-x: auto;
+  }
+  
+  .pagination-container .el-pagination {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  :deep(.el-table__body-wrapper) {
+    overflow-x: auto;
+  }
+  
+  :deep(.el-card) {
+    margin: 0;
+    border-radius: 8px;
+  }
+  
+  :deep(.el-card__body) {
+    padding: 12px;
+  }
 }
 
 @media (max-width: 480px) {
+  .dashboard-container {
+    padding: 3px;
+  }
+  
   .user-info h3 {
     font-size: 14px;
   }
   
   .user-info p {
     font-size: 11px;
+  }
+  
+  .header-actions {
+    align-items: stretch;
+  }
+  
+  .bulk-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+  }
+  
+  .bulk-actions .el-button {
+    width: 100%;
+    margin: 2px 0;
+  }
+  
+  :deep(.el-table) {
+    font-size: 12px;
+  }
+  
+  :deep(.el-table .cell) {
+    padding: 5px;
+  }
+  
+  :deep(.el-button--small) {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
+  .welcome-section h2 {
+    font-size: 1.2rem;
+  }
+  
+  .welcome-section p {
+    font-size: 0.85rem;
+  }
+  
+  :deep(.el-card__body) {
+    padding: 10px;
   }
 }
 
@@ -878,5 +1161,30 @@ const handleCommand = (command) => {
   margin-top: 20px;
   display: flex;
   justify-content: center;
+}
+
+/* Bulk Actions Styles */
+.bulk-actions-bar {
+  margin-bottom: 15px;
+}
+
+.bulk-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+@media (max-width: 480px) {
+  .bulk-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+  }
+  
+  .bulk-actions .el-button {
+    width: 100%;
+    margin: 2px 0;
+  }
 }
 </style>

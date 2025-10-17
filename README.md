@@ -11,6 +11,8 @@
 - History gabungan untuk semua jenis label
 - Preview dan print untuk thermal printer 58mm
 - Kode resi opsional (bisa dikosongkan)
+- **Delete history label** (hapus satuan atau massal dari database + file gambar)
+- **Bulk selection** untuk operasi massal pada history
 - Logout
 
 ### Teknologi
@@ -156,12 +158,16 @@ Update connection string di `backend/.env`
 - `POST /labels/generate` - Generate simple label dengan QR code
 - `GET /labels/print/{id}` - Get data label untuk print
 - `GET /labels/preview/{id}` - Preview image label (returns PNG)
+- `DELETE /labels/{id}` - Hapus simple label dan file gambar terkait
+- `DELETE /labels/bulk` - Hapus beberapa simple label sekaligus (body: array of IDs)
 
 ### Shipping Labels  
 - `GET /shipping-labels` - Get semua shipping label user
 - `POST /shipping-labels/generate` - Generate shipping label lengkap
 - `GET /shipping-labels/print/{id}` - Get data shipping label untuk print
 - `GET /shipping-labels/preview/{id}` - Preview shipping label (returns PNG)
+- `DELETE /shipping-labels/{id}` - Hapus shipping label dan file gambar terkait
+- `DELETE /shipping-labels/bulk` - Hapus beberapa shipping label sekaligus (body: array of IDs)
 
 ## Print Format
 Label dirancang untuk thermal printer lebar 58mm dengan format optimized untuk paket pengiriman.

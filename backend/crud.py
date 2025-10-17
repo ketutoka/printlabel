@@ -97,3 +97,41 @@ def get_shipping_label(db: Session, label_id: int, user_id: int):
 
 def get_user_shipping_labels(db: Session, user_id: int):
     return db.query(ShippingLabel).filter(ShippingLabel.user_id == user_id).all()
+
+def delete_label(db: Session, label_id: int, user_id: int):
+    """Delete a simple label and return the image path for file cleanup"""
+    label = db.query(Label).filter(
+        Label.id == label_id, 
+        Label.user_id == user_id
+    ).first()
+    
+    if not label:
+        return None
+    
+    # Store image path for file cleanup
+    image_path = label.image_path
+    
+    # Delete from database
+    db.delete(label)
+    db.commit()
+    
+    return image_path
+
+def delete_shipping_label(db: Session, label_id: int, user_id: int):
+    """Delete a shipping label and return the image path for file cleanup"""
+    label = db.query(ShippingLabel).filter(
+        ShippingLabel.id == label_id, 
+        ShippingLabel.user_id == user_id
+    ).first()
+    
+    if not label:
+        return None
+    
+    # Store image path for file cleanup
+    image_path = label.image_path
+    
+    # Delete from database
+    db.delete(label)
+    db.commit()
+    
+    return image_path
