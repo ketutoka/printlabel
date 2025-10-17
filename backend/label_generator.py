@@ -17,7 +17,7 @@ def generate_label_with_qr(sender_name: str, shipping_code: str, label_id: int, 
     
     # Thermal printer 58mm ≈ 203 pixels at 203 DPI
     label_width = 203
-    label_height = 230  # Increased for large QR and fonts
+    label_height = 270  # Increased for large QR and fonts
     
     # Create white background
     img = Image.new('RGB', (label_width, label_height), 'white')

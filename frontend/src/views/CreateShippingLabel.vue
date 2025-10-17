@@ -11,8 +11,8 @@
         ref="shippingFormRef" 
         :model="shippingForm" 
         :rules="shippingRules"
-        label-width="140px"
-        label-position="left"
+        :label-width="labelWidth"
+        :label-position="labelPosition"
         @submit.prevent="generateShippingLabel"
       >
         <el-divider content-position="left">
@@ -93,7 +93,7 @@
 
         <el-form-item>
           <el-row :gutter="10" style="margin-top: 20px;">
-            <el-col :span="12">
+            <el-col :xs="24" :sm="12" :md="12">
               <el-button 
                 type="primary" 
                 @click="generateShippingLabel"
@@ -105,7 +105,7 @@
                 <span v-else>⏳ Membuat Label...</span>
               </el-button>
             </el-col>
-            <el-col :span="12">
+            <el-col :xs="24" :sm="12" :md="12">
               <el-button 
                 type="info" 
                 @click="backToDashboard"
@@ -134,13 +134,14 @@
     <el-dialog
       v-model="showPreview"
       title="📋 Preview Label Pengiriman"
-      width="90%"
+      :width="dialogWidth"
       :before-close="handleClosePreview"
+      :fullscreen="isMobile"
     >
       <div v-if="generatedLabel" class="preview-content">
         <!-- Label Details -->
         <el-row :gutter="20" style="margin-bottom: 20px;">
-          <el-col :span="12">
+          <el-col :xs="24" :sm="12" :md="12">
             <el-card shadow="never">
               <template #header>
                 <span>📤 Pengirim</span>
@@ -149,7 +150,7 @@
               <p><strong>No HP:</strong> {{ generatedLabel.sender_phone }}</p>
             </el-card>
           </el-col>
-          <el-col :span="12">
+          <el-col :xs="24" :sm="12" :md="12">
             <el-card shadow="never">
               <template #header>
                 <span>📥 Penerima</span>
@@ -181,12 +182,18 @@
 
         <!-- Print Button -->
         <div style="text-align: center; margin-top: 30px;">
-          <el-button type="primary" @click="printFromPreview" size="large">
-            🖨️ Print Label Ini
-          </el-button>
-          <el-button @click="backToDashboard" size="large">
-            📋 Kembali ke Dashboard
-          </el-button>
+          <el-row :gutter="10">
+            <el-col :xs="24" :sm="12" :md="12">
+              <el-button type="primary" @click="printFromPreview" size="large" style="width: 100%;">
+                🖨️ Print Label Ini
+              </el-button>
+            </el-col>
+            <el-col :xs="24" :sm="12" :md="12">
+              <el-button @click="backToDashboard" size="large" style="width: 100%;">
+                📋 Kembali ke Dashboard
+              </el-button>
+            </el-col>
+          </el-row>
         </div>
       </div>
 
@@ -194,8 +201,9 @@
       <el-dialog
         v-model="showActualPreview"
         title="🖼️ Preview Label"
-        width="400px"
+        :width="dialogWidth"
         append-to-body
+        :fullscreen="isMobile"
       >
         <div style="text-align: center;">
           <div v-if="loadingPreview">
@@ -215,9 +223,13 @@
         </div>
         
         <template #footer>
-          <el-button type="primary" @click="printFromPreview">
-            🖨️ Print Label Ini
-          </el-button>
+          <el-row :gutter="10">
+            <el-col :xs="24" :sm="12">
+              <el-button type="primary" @click="printFromPreview" style="width: 100%;">
+                🖨️ Print Label Ini
+              </el-button>
+            </el-col>
+          </el-row>
         </template>
       </el-dialog>
     </el-dialog>
@@ -232,7 +244,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useShippingStore } from '../stores/shipping'
@@ -251,6 +263,26 @@ const showActualPreview = ref(false)
 const generatedLabel = ref(null)
 const actualPreviewUrl = ref('')
 const loadingPreview = ref(false)
+
+// Responsive design computed properties
+const isMobile = computed(() => {
+  return window.innerWidth < 768
+})
+
+const dialogWidth = computed(() => {
+  if (window.innerWidth < 576) return '95%'
+  if (window.innerWidth < 768) return '90%'
+  if (window.innerWidth < 992) return '85%'
+  return '80%'
+})
+
+const labelWidth = computed(() => {
+  return window.innerWidth < 768 ? '100px' : '140px'
+})
+
+const labelPosition = computed(() => {
+  return window.innerWidth < 576 ? 'top' : 'left'
+})
 
 const shippingForm = reactive({
   sender_name: '',
@@ -516,7 +548,7 @@ watch(showActualPreview, (newValue) => {
 .create-shipping-label-container {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 20px 15px;
 }
 
 .card-header {
@@ -525,6 +557,7 @@ watch(showActualPreview, (newValue) => {
   align-items: center;
   font-weight: bold;
   color: #409eff;
+  font-size: 1.1rem;
 }
 
 .preview-content {
@@ -535,6 +568,7 @@ watch(showActualPreview, (newValue) => {
 :deep(.el-divider__text) {
   background-color: #f5f7fa;
   padding: 0 20px;
+  font-size: 0.9rem;
 }
 
 :deep(.el-form-item__label) {
@@ -544,5 +578,119 @@ watch(showActualPreview, (newValue) => {
 
 :deep(.el-textarea__inner) {
   font-family: inherit;
+}
+
+:deep(.el-card__header) {
+  padding: 12px 20px;
+}
+
+:deep(.el-card__body) {
+  padding: 15px 20px;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .create-shipping-label-container {
+    padding: 15px 10px;
+  }
+  
+  .card-header {
+    font-size: 1rem;
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .preview-content {
+    max-height: 70vh;
+  }
+  
+  :deep(.el-divider__text) {
+    font-size: 0.85rem;
+    padding: 0 15px;
+  }
+  
+  :deep(.el-card__header) {
+    padding: 10px 15px;
+  }
+  
+  :deep(.el-card__body) {
+    padding: 12px 15px;
+  }
+  
+  :deep(.el-form-item) {
+    margin-bottom: 15px;
+  }
+}
+
+@media (max-width: 576px) {
+  .create-shipping-label-container {
+    padding: 10px 5px;
+  }
+  
+  .card-header {
+    font-size: 0.95rem;
+  }
+  
+  .preview-content {
+    max-height: 75vh;
+  }
+  
+  :deep(.el-divider__text) {
+    font-size: 0.8rem;
+    padding: 0 10px;
+  }
+  
+  :deep(.el-card__header) {
+    padding: 8px 10px;
+    font-size: 0.9rem;
+  }
+  
+  :deep(.el-card__body) {
+    padding: 10px;
+  }
+  
+  :deep(.el-card__body p) {
+    font-size: 0.85rem;
+    margin: 3px 0;
+  }
+  
+  :deep(.el-form-item) {
+    margin-bottom: 12px;
+  }
+  
+  :deep(.el-form-item__label) {
+    font-size: 0.9rem;
+  }
+  
+  :deep(.el-input__inner) {
+    font-size: 0.9rem;
+  }
+  
+  :deep(.el-textarea__inner) {
+    font-size: 0.9rem;
+  }
+  
+  :deep(.el-button) {
+    font-size: 0.85rem;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 480px) {
+  .create-shipping-label-container {
+    padding: 5px;
+  }
+  
+  :deep(.el-card) {
+    margin: 0;
+  }
+  
+  :deep(.el-card__body) {
+    padding: 8px;
+  }
+  
+  :deep(.el-form-item__label) {
+    font-size: 0.85rem;
+  }
 }
 </style>

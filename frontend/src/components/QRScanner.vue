@@ -4,8 +4,8 @@
     <el-dialog
       v-model="showScanner"
       title="Scan QR Code / Barcode"
-      width="90%"
-      :style="{ maxWidth: '500px' }"
+      :width="dialogWidth"
+      :fullscreen="isMobile"
       @close="stopScanning"
       center
     >
@@ -47,10 +47,16 @@
 
       <template #footer>
         <div class="scanner-footer">
-          <el-button @click="stopScanning">Batal</el-button>
-          <el-button type="info" @click="switchCamera" v-if="cameras.length > 1">
-            📷 Ganti Kamera
-          </el-button>
+          <el-row :gutter="10">
+            <el-col :xs="12" :sm="8">
+              <el-button @click="stopScanning" style="width: 100%;">Batal</el-button>
+            </el-col>
+            <el-col :xs="12" :sm="8" v-if="cameras.length > 1">
+              <el-button type="info" @click="switchCamera" style="width: 100%;">
+                📷 Ganti Kamera
+              </el-button>
+            </el-col>
+          </el-row>
         </div>
       </template>
     </el-dialog>
@@ -58,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Html5QrcodeScanner, Html5Qrcode } from 'html5-qrcode'
 
@@ -71,6 +77,17 @@ const manualCode = ref('')
 const scanner = ref(null)
 const cameras = ref([])
 const currentCameraIndex = ref(0)
+
+// Responsive design computed properties
+const isMobile = computed(() => {
+  return window.innerWidth < 768
+})
+
+const dialogWidth = computed(() => {
+  if (window.innerWidth < 576) return '95%'
+  if (window.innerWidth < 768) return '90%'
+  return '500px'
+})
 
 // Start scanning function
 const startScanning = async () => {
@@ -236,9 +253,7 @@ defineExpose({
 }
 
 .scanner-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  width: 100%;
 }
 
 /* Override html5-qrcode styles */
@@ -269,8 +284,38 @@ defineExpose({
     max-width: 100%;
   }
   
+  .scanner-content {
+    padding: 0 10px;
+  }
+  
+  .scanner-info {
+    margin-bottom: 15px;
+  }
+  
   :deep(#qr-reader) {
     width: 100% !important;
+  }
+  
+  :deep(.qr-code-text) {
+    font-size: 11px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .scanner-content {
+    padding: 0 5px;
+  }
+  
+  .scanner-info {
+    margin-bottom: 10px;
+  }
+  
+  :deep(#qr-reader__dashboard) {
+    padding: 5px !important;
+  }
+  
+  :deep(.qr-code-text) {
+    font-size: 10px !important;
   }
 }
 </style>

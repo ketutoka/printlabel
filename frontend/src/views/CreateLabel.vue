@@ -1,7 +1,7 @@
 <template>
   <div class="create-label-container">
     <el-row justify="center">
-      <el-col :span="16">
+      <el-col :xs="24" :sm="20" :md="16" :lg="14" :xl="12">
         <el-card shadow="hover">
           <template #header>
             <div class="card-header">
@@ -14,7 +14,8 @@
             ref="labelFormRef"
             :model="labelForm"
             :rules="rules"
-            label-width="120px"
+            :label-width="labelWidth"
+            :label-position="labelPosition"
             @submit.prevent="handleCreateLabel"
           >
             <el-form-item label="Nama" prop="sender_name">
@@ -52,20 +53,29 @@
             </el-form-item>
 
             <el-form-item>
-              <el-button
-                type="primary"
-                :loading="labelStore.loading"
-                @click="handleCreateLabel"
-                size="large"
-              >
-                {{ labelStore.loading ? 'Membuat Label...' : 'Generate QR Code' }}
-              </el-button>
-              <el-button @click="resetForm" style="margin-left: 10px;">
-                Reset
-              </el-button>
-              <el-button type="info" @click="$router.push('/dashboard')">
-                Kembali
-              </el-button>
+              <el-row :gutter="10">
+                <el-col :xs="24" :sm="8" :md="8">
+                  <el-button
+                    type="primary"
+                    :loading="labelStore.loading"
+                    @click="handleCreateLabel"
+                    size="large"
+                    style="width: 100%;"
+                  >
+                    {{ labelStore.loading ? 'Membuat Label...' : 'Generate QR Code' }}
+                  </el-button>
+                </el-col>
+                <el-col :xs="12" :sm="8" :md="8">
+                  <el-button @click="resetForm" style="width: 100%;" size="large">
+                    Reset
+                  </el-button>
+                </el-col>
+                <el-col :xs="12" :sm="8" :md="8">
+                  <el-button type="info" @click="$router.push('/dashboard')" style="width: 100%;" size="large">
+                    Kembali
+                  </el-button>
+                </el-col>
+              </el-row>
             </el-form-item>
           </el-form>
 
@@ -93,8 +103,9 @@
     <el-dialog
       v-model="showPreview"
       title="Preview Label"
-      width="400px"
+      :width="dialogWidth"
       center
+      :fullscreen="isMobile"
     >
       <div v-if="generatedLabel" class="label-preview">
         <div class="preview-header">
@@ -125,21 +136,32 @@
       </div>
 
       <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showPreview = false">Tutup</el-button>
-          <el-button 
-            type="success" 
-            @click="previewActualLabel"
-          >
-            👁️ Preview Asli
-          </el-button>
-          <el-button type="primary" @click="printLabel">
-            🖨️ Print Label
-          </el-button>
-          <el-button type="info" @click="createAnotherLabel">
-            Buat Label Lagi
-          </el-button>
-        </span>
+        <div class="dialog-footer">
+          <el-row :gutter="10">
+            <el-col :xs="12" :sm="6">
+              <el-button @click="showPreview = false" style="width: 100%;">Tutup</el-button>
+            </el-col>
+            <el-col :xs="12" :sm="6">
+              <el-button 
+                type="success" 
+                @click="previewActualLabel"
+                style="width: 100%;"
+              >
+                👁️ Preview
+              </el-button>
+            </el-col>
+            <el-col :xs="12" :sm="6">
+              <el-button type="primary" @click="printLabel" style="width: 100%;">
+                🖨️ Print
+              </el-button>
+            </el-col>
+            <el-col :xs="12" :sm="6">
+              <el-button type="info" @click="createAnotherLabel" style="width: 100%;">
+                Buat Lagi
+              </el-button>
+            </el-col>
+          </el-row>
+        </div>
       </template>
     </el-dialog>
 
@@ -147,8 +169,9 @@
     <el-dialog
       v-model="showActualPreview"
       title="Preview Label Asli"
-      width="600px"
+      :width="dialogWidth"
       center
+      :fullscreen="isMobile"
     >
       <div v-if="generatedLabel" class="actual-preview-container">
         <div class="preview-info">
@@ -169,19 +192,25 @@
       </div>
 
       <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showActualPreview = false">Tutup</el-button>
-          <el-button type="primary" @click="printFromPreview">
-            🖨️ Print Label Ini
-          </el-button>
-        </span>
+        <div class="dialog-footer">
+          <el-row :gutter="10">
+            <el-col :xs="12" :sm="12">
+              <el-button @click="showActualPreview = false" style="width: 100%;">Tutup</el-button>
+            </el-col>
+            <el-col :xs="12" :sm="12">
+              <el-button type="primary" @click="printFromPreview" style="width: 100%;">
+                🖨️ Print Label Ini
+              </el-button>
+            </el-col>
+          </el-row>
+        </div>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useLabelStore } from '../stores/label'
@@ -199,6 +228,26 @@ const showPreview = ref(false)
 const showActualPreview = ref(false)
 const generatedLabel = ref(null)
 const actualPreviewUrl = ref('')
+
+// Responsive design computed properties
+const isMobile = computed(() => {
+  return window.innerWidth < 768
+})
+
+const dialogWidth = computed(() => {
+  if (window.innerWidth < 576) return '95%'
+  if (window.innerWidth < 768) return '90%'
+  if (window.innerWidth < 992) return '80%'
+  return '600px'
+})
+
+const labelWidth = computed(() => {
+  return window.innerWidth < 768 ? '90px' : '120px'
+})
+
+const labelPosition = computed(() => {
+  return window.innerWidth < 576 ? 'top' : 'right'
+})
 
 const labelForm = reactive({
   sender_name: '',
@@ -460,6 +509,7 @@ const formatDate = (dateString) => {
 .create-label-container {
   max-width: 800px;
   margin: 0 auto;
+  padding: 0 15px;
 }
 
 .card-header {
@@ -469,6 +519,12 @@ const formatDate = (dateString) => {
 
 .card-header h2 {
   margin-bottom: 10px;
+  font-size: 1.5rem;
+}
+
+.card-header p {
+  margin: 0;
+  font-size: 0.9rem;
 }
 
 .label-preview {
@@ -476,7 +532,8 @@ const formatDate = (dateString) => {
   border: 2px dashed #409EFF;
   padding: 20px;
   background-color: #f9f9f9;
-  width: 58mm; /* Thermal printer width */
+  width: 100%;
+  max-width: 58mm;
   margin: 0 auto;
   font-family: monospace;
 }
@@ -506,8 +563,7 @@ const formatDate = (dateString) => {
 }
 
 .dialog-footer {
-  display: flex;
-  justify-content: space-between;
+  width: 100%;
 }
 
 .actual-preview-container {
@@ -525,11 +581,13 @@ const formatDate = (dateString) => {
 .preview-info h3 {
   margin: 0 0 10px 0;
   color: #409EFF;
+  font-size: 1.1rem;
 }
 
 .preview-info p {
   margin: 5px 0;
   color: #666;
+  font-size: 0.9rem;
 }
 
 .actual-image-container {
@@ -548,5 +606,59 @@ const formatDate = (dateString) => {
   border-radius: 4px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
   background-color: white;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .create-label-container {
+    padding: 0 10px;
+  }
+  
+  .card-header h2 {
+    font-size: 1.3rem;
+  }
+  
+  .card-header p {
+    font-size: 0.8rem;
+  }
+  
+  .preview-info {
+    padding: 10px;
+  }
+  
+  .preview-info h3 {
+    font-size: 1rem;
+  }
+  
+  .preview-info p {
+    font-size: 0.8rem;
+  }
+  
+  .actual-image-container {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 576px) {
+  .create-label-container {
+    padding: 0 5px;
+  }
+  
+  .card-header h2 {
+    font-size: 1.2rem;
+  }
+  
+  .label-preview {
+    padding: 15px;
+  }
+  
+  .qr-placeholder {
+    padding: 15px;
+    margin: 10px 0;
+  }
+  
+  .qr-placeholder p {
+    font-size: 20px;
+  }
 }
 </style>
