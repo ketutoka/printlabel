@@ -1,8 +1,7 @@
 <template>
   <div class="create-label-container">
-    <el-row justify="center">
-      <el-col :xs="24" :sm="22" :md="18" :lg="16" :xl="14">
-        <el-card shadow="hover">
+    <div class="form-wrapper">
+      <el-card shadow="hover" class="mobile-card">
           <template #header>
             <div class="card-header">
               <h2>🏷️ Buat QRCODE Label</h2>
@@ -89,8 +88,7 @@
             @close="labelStore.clearError"
           />
         </el-card>
-      </el-col>
-    </el-row>
+    </div>
 
     <!-- QR Scanner Component -->
     <QRScanner 
@@ -511,6 +509,15 @@ const formatDate = (dateString) => {
   margin: 0 auto;
   padding: 10px;
   min-height: 100vh;
+  width: 100%;
+}
+
+.form-wrapper {
+  width: 100%;
+}
+
+.mobile-card {
+  width: 100%;
 }
 
 .card-header {
@@ -612,9 +619,16 @@ const formatDate = (dateString) => {
 /* Mobile Responsiveness - Full Width */
 @media (max-width: 768px) {
   .create-label-container {
-    padding: 5px;
-    margin: 0;
-    max-width: 100%;
+    padding: 0px !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+  
+  .form-wrapper {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 5px !important;
   }
   
   .card-header h2 {
@@ -626,8 +640,16 @@ const formatDate = (dateString) => {
   }
   
   :deep(.el-card) {
-    margin: 0;
+    margin: 0 !important;
     border-radius: 8px;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .mobile-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
   }
   
   :deep(.el-card__body) {

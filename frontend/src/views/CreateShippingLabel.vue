@@ -592,9 +592,10 @@ watch(showActualPreview, (newValue) => {
 /* Mobile Responsiveness - Full Width */
 @media (max-width: 768px) {
   .create-shipping-label-container {
-    padding: 5px;
-    margin: 0;
-    max-width: 100%;
+    padding: 3px !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
   }
   
   .card-header {
@@ -608,8 +609,11 @@ watch(showActualPreview, (newValue) => {
   }
   
   :deep(.el-card) {
-    margin: 0;
+    margin: 0 !important;
     border-radius: 8px;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
   }
   
   :deep(.el-card__body) {

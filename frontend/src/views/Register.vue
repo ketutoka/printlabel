@@ -194,14 +194,19 @@ const handleRegister = async () => {
 /* Mobile Responsiveness - Full Width */
 @media (max-width: 768px) {
   .register-container {
-    padding: 5px;
+    padding: 3px !important;
     align-items: flex-start;
-    padding-top: 8vh;
+    padding-top: 5vh;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
   }
   
   .register-card {
-    max-width: 100%;
-    width: 100%;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box;
   }
   
   .card-header h2 {

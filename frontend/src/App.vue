@@ -72,8 +72,10 @@ html, body {
 @media (max-width: 768px) {
   /* Prevent horizontal scrolling on mobile */
   html, body, #app {
-    max-width: 100vw;
-    overflow-x: hidden;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   
   /* Make all containers full width */
@@ -83,11 +85,26 @@ html, body {
   .el-form {
     width: 100% !important;
     max-width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
   }
   
   /* Reset any margin/padding that might create gaps */
   .el-main {
-    padding: 8px !important;
+    padding: 5px !important;
+  }
+  
+  /* Force all page containers to full width */
+  .create-label-container,
+  .login-container,
+  .register-container,
+  .create-shipping-label-container,
+  .dashboard-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 3px !important;
+    box-sizing: border-box !important;
   }
   
   /* Ensure form inputs use full available width */
@@ -97,6 +114,15 @@ html, body {
   .el-select {
     width: 100% !important;
     max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  
+  /* Force input elements to be full width */
+  .el-input__wrapper,
+  .el-input__inner,
+  .el-textarea__inner {
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   
   /* Prevent iOS zoom on input focus */
