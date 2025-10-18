@@ -176,16 +176,15 @@
               @selection-change="handleSelectionChange"
             >
               <el-table-column type="selection" width="55" />
-              <el-table-column label="Aksi" width="60" fixed="left">
+              <el-table-column label="Aksi" width="80" fixed="left">
                 <template #default="scope">
                   <el-dropdown @command="(command) => handleActionCommand(command, scope.row)" placement="bottom-start">
                     <el-button 
                       type="primary" 
                       size="small"
-                      circle
                       :title="'Menu Aksi'"
                     >
-                      <el-icon><More /></el-icon>
+                      <el-icon><ArrowDown /></el-icon>
                     </el-button>
                     <template #dropdown>
                       <el-dropdown-menu>
@@ -276,7 +275,8 @@
     <el-dialog
       v-model="showLabelPreview"
       title="Preview Label"
-      width="500px"
+      :width="dialogWidth"
+      :fullscreen="isMobilePreview"
       center
     >
       <div v-if="previewLabelData" class="preview-container">
@@ -302,15 +302,16 @@
       </div>
 
       <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="showLabelPreview = false">Tutup</el-button>
+        <div class="dialog-footer">
+          <el-button @click="showLabelPreview = false" size="large">Tutup</el-button>
           <el-button 
             type="primary" 
             @click="printLabel(previewLabelData)"
+            size="large"
           >
             🖨️ Print Label Ini
           </el-button>
-        </span>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -320,7 +321,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User, Setting, SwitchButton, ArrowDown, View, Printer, Search, More, Delete } from '@element-plus/icons-vue'
+import { User, Setting, SwitchButton, ArrowDown, View, Printer, Search, Delete, Loading } from '@element-plus/icons-vue'
 import { useLabelStore } from '../stores/label'
 import { useShippingStore } from '../stores/shipping'
 import { useUserStore } from '../stores/user'
@@ -417,6 +418,18 @@ const weekLabelsCount = computed(() => {
 
 const totalLabelsCount = computed(() => {
   return labelStore.labels.length + shippingStore.shippingLabels.length
+})
+
+// Responsive dialog properties
+const isMobilePreview = computed(() => {
+  return window.innerWidth <= 768
+})
+
+const dialogWidth = computed(() => {
+  if (window.innerWidth <= 480) return '95%'
+  if (window.innerWidth <= 768) return '90%'
+  if (window.innerWidth <= 992) return '80%'
+  return '500px'
 })
 
 const formatDate = (dateString) => {
@@ -863,12 +876,58 @@ const handleCommand = (command) => {
   transition: transform 0.3s;
 }
 
+/* Action button with arrow down styling */
+.el-table .el-dropdown .el-button {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  min-width: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.el-table .el-dropdown .el-button .el-icon {
+  font-size: 16px;
+  transition: transform 0.2s ease;
+}
+
+.el-table .el-dropdown:hover .el-button .el-icon {
+  transform: rotate(180deg);
+}
+
+.el-table .el-dropdown .el-button:hover {
+  background-color: #337ecc;
+  border-color: #337ecc;
+}
+
 /* Mobile responsiveness */
 @media (max-width: 768px) {
   .dashboard-container {
     padding: 5px;
     margin: 0;
     max-width: 100%;
+  }
+  
+  /* Mobile dialog optimization */
+  :deep(.el-dialog) {
+    margin: 5px !important;
+    max-height: calc(100vh - 10px) !important;
+    width: calc(100vw - 10px) !important;
+  }
+  
+  :deep(.el-dialog__body) {
+    padding: 10px !important;
+    max-height: calc(100vh - 150px) !important;
+    overflow-y: auto !important;
+  }
+  
+  :deep(.el-dialog__header) {
+    padding: 15px !important;
+  }
+  
+  :deep(.el-dialog__footer) {
+    padding: 10px !important;
   }
   
   .user-info h3 {
@@ -937,6 +996,60 @@ const handleCommand = (command) => {
   
   :deep(.el-card__body) {
     padding: 12px;
+  }
+  
+  /* Mobile action button optimization */
+  .el-table .el-dropdown .el-button {
+    padding: 6px 10px;
+    min-width: 40px;
+    font-size: 12px;
+  }
+  
+  .el-table .el-dropdown .el-button .el-icon {
+    font-size: 14px;
+  }
+  
+  /* Mobile preview optimization */
+  .preview-container {
+    padding: 0;
+    margin: 0;
+  }
+  
+  .label-info {
+    margin-bottom: 15px;
+    padding: 12px;
+    font-size: 14px;
+  }
+  
+  .label-info h3 {
+    font-size: 1rem;
+    line-height: 1.2;
+  }
+  
+  .label-info p {
+    font-size: 0.85rem;
+    line-height: 1.3;
+  }
+  
+  .label-image-container {
+    padding: 10px;
+    margin: 0;
+  }
+  
+  .label-preview-image {
+    max-height: 300px;
+    width: 100%;
+    height: auto;
+  }
+  
+  .dialog-footer {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .dialog-footer .el-button {
+    width: 100%;
+    margin: 0;
   }
 }
 
@@ -1034,6 +1147,8 @@ const handleCommand = (command) => {
 
 .preview-container {
   text-align: center;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .label-info {
@@ -1041,16 +1156,22 @@ const handleCommand = (command) => {
   padding: 15px;
   background-color: #f5f5f5;
   border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .label-info h3 {
   margin: 0 0 10px 0;
   color: #409EFF;
+  font-size: 1.1rem;
+  word-wrap: break-word;
 }
 
 .label-info p {
   margin: 5px 0;
   color: #666;
+  font-size: 0.9rem;
+  word-wrap: break-word;
 }
 
 .label-image-container {
@@ -1060,14 +1181,20 @@ const handleCommand = (command) => {
   background-color: #fafafa;
   border-radius: 8px;
   border: 2px dashed #ddd;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .label-preview-image {
   max-width: 100%;
+  width: auto;
+  height: auto;
   max-height: 400px;
   border: 1px solid #ddd;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  object-fit: contain;
 }
 
 .dialog-footer {
@@ -1185,6 +1312,33 @@ const handleCommand = (command) => {
   .bulk-actions .el-button {
     width: 100%;
     margin: 2px 0;
+  }
+  
+  /* Small mobile preview optimization */
+  .label-info {
+    padding: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .label-info h3 {
+    font-size: 0.95rem;
+  }
+  
+  .label-info p {
+    font-size: 0.8rem;
+  }
+  
+  .label-image-container {
+    padding: 8px;
+  }
+  
+  .label-preview-image {
+    max-height: 250px;
+  }
+  
+  .dialog-footer .el-button {
+    padding: 12px 16px;
+    font-size: 14px;
   }
 }
 </style>
