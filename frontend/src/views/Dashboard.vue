@@ -494,13 +494,13 @@ const printLabel = async (label) => {
           'Opsi Printing Mobile',
           {
             distinguishCancelAndClose: true,
-            confirmButtonText: '📱 Buka di Tab Baru',
+            confirmButtonText: '�️ Print Label (Gambar)',
             cancelButtonText: '⬇️ Download PNG',
             type: 'info',
           }
         ).then(() => {
-          // Open in new tab for mobile printing
-          printMobileOptimized(label)
+          // Use same print method as desktop but optimized for mobile
+          printViaBrowser(label)
         }).catch((action) => {
           if (action === 'cancel') {
             // Download image
@@ -539,14 +539,8 @@ const printLabel = async (label) => {
 
 const printViaBrowser = async (label) => {
   try {
-    // Detect mobile device
-    const isMobileDevice = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    
-    if (isMobileDevice) {
-      // Use mobile-optimized print
-      printMobileOptimized(label)
-      return
-    }
+    // For consistent printing, always use the same print method
+    // Mobile detection will be handled in printLabel function
     
     // Get the preview image URL based on label type
     const token = userStore.token
@@ -556,6 +550,9 @@ const printViaBrowser = async (label) => {
     } else {
       imageUrl = `${api.defaults.baseURL}/labels/preview/${label.id}?token=${token}`
     }
+    
+    // Detect if mobile for different layout
+    const isMobileDevice = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
     
     // Create a new window for printing
     const printWindow = window.open('', '_blank')
@@ -575,60 +572,119 @@ const printViaBrowser = async (label) => {
           
           @page {
             margin: 0;
-            size: 58mm 100mm;
-            orientation: portrait;
+            size: ${isMobileDevice ? 'A4 portrait' : '58mm 100mm'};
           }
           
           html, body {
             margin: 0;
             padding: 0;
-            width: 58mm;
-            height: 100mm;
-            overflow: hidden;
             background: white;
+            font-family: Arial, sans-serif;
           }
           
           .print-container {
-            width: 58mm;
-            height: auto;
-            max-height: 100mm;
-            padding: 2mm;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
+            justify-content: center;
+            min-height: 100vh;
+            padding: ${isMobileDevice ? '20px' : '2mm'};
+          }
+          
+          .label-info {
+            text-align: center;
+            margin-bottom: 20px;
+            display: ${isMobileDevice ? 'block' : 'none'};
+          }
+          
+          .label-info h2 {
+            color: #409EFF;
+            margin-bottom: 10px;
+            font-size: 18px;
+          }
+          
+          .label-info p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 14px;
           }
           
           img {
-            width: 54mm;
+            max-width: ${isMobileDevice ? '300px' : '54mm'};
+            width: ${isMobileDevice ? '100%' : '54mm'};
             height: auto;
-            max-width: 54mm;
             display: block;
             object-fit: contain;
+            border: ${isMobileDevice ? '2px dashed #409EFF' : 'none'};
+            padding: ${isMobileDevice ? '10px' : '0'};
+            border-radius: ${isMobileDevice ? '8px' : '0'};
+          }
+          
+          .print-instructions {
+            margin-top: 20px;
+            padding: 10px;
+            background: #e1f3d8;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #529b2e;
+            display: ${isMobileDevice ? 'block' : 'none'};
           }
           
           @media print {
-            html, body {
-              width: 58mm !important;
-              height: 100mm !important;
-              overflow: hidden !important;
+            .print-instructions {
+              display: none !important;
+            }
+            
+            .label-info {
+              display: none !important;
             }
             
             .print-container {
-              padding: 1mm !important;
+              min-height: auto;
+              padding: ${isMobileDevice ? '0' : '1mm'} !important;
+              justify-content: flex-start;
             }
             
             img {
-              width: 56mm !important;
-              max-width: 56mm !important;
+              max-width: ${isMobileDevice ? '200mm' : '56mm'} !important;
+              width: ${isMobileDevice ? 'auto' : '56mm'} !important;
+              border: none !important;
+              padding: 0 !important;
               page-break-inside: avoid;
+            }
+          }
+          
+          /* Mobile screen styles */
+          @media screen and (max-width: 768px) {
+            .print-container {
+              padding: 15px;
+            }
+            
+            img {
+              max-width: 280px;
             }
           }
         </style>
       </head>
       <body>
         <div class="print-container">
-          <img src="${imageUrl}" alt="Label ${labelCode}" onload="setTimeout(() => { window.print(); setTimeout(() => window.close(), 1000); }, 500);" onerror="alert('Gagal memuat gambar label');" />
+          <div class="label-info">
+            <h2>🏷️ Label ${label.type === 'shipping' ? 'Pengiriman' : 'Sederhana'}</h2>
+            <p><strong>Kode:</strong> ${labelCode}</p>
+            <p><strong>Pengirim:</strong> ${label.sender_name || 'Tidak ada'}</p>
+            ${label.type === 'shipping' && label.recipient_name ? `<p><strong>Penerima:</strong> ${label.recipient_name}</p>` : ''}
+            <p><strong>Tanggal:</strong> ${new Date(label.created_at).toLocaleDateString('id-ID')}</p>
+          </div>
+          
+          <img src="${imageUrl}" alt="Label ${labelCode}" onload="setTimeout(() => { ${isMobileDevice ? '' : 'window.print(); setTimeout(() => window.close(), 1000);'} }, 500);" onerror="alert('Gagal memuat gambar label');" />
+          
+          <div class="print-instructions">
+            <strong>📱 Cara Print:</strong><br>
+            1. Tekan tombol print di browser (ikon printer)<br>
+            2. Pilih printer yang tersedia<br>
+            3. Pastikan ukuran kertas sesuai (A4 atau 58mm untuk thermal)<br>
+            4. Klik Print untuk mencetak label
+          </div>
         </div>
       </body>
       </html>
@@ -642,199 +698,7 @@ const printViaBrowser = async (label) => {
   }
 }
 
-const printMobileOptimized = async (label) => {
-  try {
-    // Get the preview image URL based on label type
-    const token = userStore.token
-    let imageUrl
-    if (label.type === 'shipping') {
-      imageUrl = `${api.defaults.baseURL}/shipping-labels/preview/${label.id}?token=${token}`
-    } else {
-      imageUrl = `${api.defaults.baseURL}/labels/preview/${label.id}?token=${token}`
-    }
-    
-    const labelCode = label.shipping_code || 'Label'
-    const labelType = label.type === 'shipping' ? 'Pengiriman' : 'Sederhana'
-    
-    // Create a mobile-optimized print page
-    const printWindow = window.open('', '_blank')
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Label ${labelCode}</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          
-          body {
-            font-family: Arial, sans-serif;
-            padding: 10px;
-            background: #f5f5f5;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-          }
-          
-          .mobile-print-container {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            max-width: 350px;
-            width: 100%;
-            text-align: center;
-          }
-          
-          h2 {
-            color: #409EFF;
-            margin-bottom: 15px;
-            font-size: 18px;
-          }
-          
-          .label-info {
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 15px;
-            text-align: left;
-          }
-          
-          .label-info p {
-            margin: 5px 0;
-            font-size: 14px;
-            color: #666;
-          }
-          
-          .label-image {
-            width: 100%;
-            max-width: 300px;
-            height: auto;
-            border: 2px dashed #409EFF;
-            border-radius: 8px;
-            padding: 10px;
-            background: white;
-            margin: 15px 0;
-          }
-          
-          .print-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 20px;
-          }
-          
-          .btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            min-width: 120px;
-            text-align: center;
-            transition: all 0.3s ease;
-          }
-          
-          .btn-primary {
-            background: #409EFF;
-            color: white;
-          }
-          
-          .btn-primary:hover {
-            background: #337ecc;
-          }
-          
-          .btn-success {
-            background: #67C23A;
-            color: white;
-          }
-          
-          .btn-success:hover {
-            background: #529b2e;
-          }
-          
-          .print-instructions {
-            background: #e1f3d8;
-            padding: 10px;
-            border-radius: 6px;
-            margin-top: 15px;
-            font-size: 12px;
-            color: #529b2e;
-            text-align: left;
-          }
-          
-          @media print {
-            body {
-              background: white;
-              padding: 0;
-            }
-            
-            .print-actions,
-            .print-instructions {
-              display: none !important;
-            }
-            
-            .mobile-print-container {
-              box-shadow: none;
-              border: none;
-              width: 58mm;
-              max-width: 58mm;
-            }
-            
-            .label-image {
-              width: 54mm;
-              max-width: 54mm;
-              border: none;
-              padding: 0;
-            }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="mobile-print-container">
-          <h2>🏷️ Label ${labelType}</h2>
-          
-          <div class="label-info">
-            <p><strong>Kode:</strong> ${labelCode}</p>
-            <p><strong>Pengirim:</strong> ${label.sender_name || 'Tidak ada'}</p>
-            ${label.type === 'shipping' && label.recipient_name ? `<p><strong>Penerima:</strong> ${label.recipient_name}</p>` : ''}
-            <p><strong>Tanggal:</strong> ${new Date(label.created_at).toLocaleDateString('id-ID')}</p>
-          </div>
-          
-          <img src="${imageUrl}" alt="Label ${labelCode}" class="label-image" />
-          
-          <div class="print-actions">
-            <button class="btn btn-primary" onclick="window.print()">🖨️ Print</button>
-            <a href="${imageUrl}" download="${labelCode}.png" class="btn btn-success">⬇️ Download</a>
-          </div>
-          
-          <div class="print-instructions">
-            <strong>📱 Cara Print di Mobile:</strong><br>
-            1. Tekan tombol "Print" di atas<br>
-            2. Pilih printer atau "Save as PDF"<br>
-            3. Untuk thermal printer, pastikan ukuran kertas 58mm<br>
-            4. Atau download gambar dan print dari aplikasi foto
-          </div>
-        </div>
-      </body>
-      </html>
-    `)
-    printWindow.document.close()
-    
-    ElMessage.success(`Label ${labelCode} dibuka di tab baru untuk printing`)
-  } catch (error) {
-    ElMessage.error('Gagal membuka halaman print mobile')
-    console.error('Mobile print error:', error)
-  }
-}
+// Removed printMobileOptimized - using unified printViaBrowser for consistency
 
 const downloadLabel = async (label) => {
   try {
