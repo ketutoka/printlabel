@@ -253,7 +253,7 @@
       <el-col :span="8">
         <el-card shadow="hover" class="stat-card">
           <el-statistic 
-            title="Label Hari Ini" 
+            title="Hari Ini" 
             :value="todayLabelsCount"
             prefix="📅"
           />
@@ -263,7 +263,7 @@
       <el-col :span="8">
         <el-card shadow="hover" class="stat-card">
           <el-statistic 
-            title="Label Minggu Ini" 
+            title="Minggu Ini" 
             :value="weekLabelsCount"
             prefix="📊"
           />
