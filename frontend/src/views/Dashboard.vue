@@ -630,8 +630,55 @@ const printViaBrowser = async (label) => {
             display: ${isMobileDevice ? 'block' : 'none'};
           }
           
+          .mobile-print-buttons {
+            display: ${isMobileDevice ? 'flex' : 'none'};
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+          }
+          
+          .print-button {
+            background: #409EFF;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            min-width: 120px;
+            transition: all 0.3s ease;
+          }
+          
+          .print-button:hover {
+            background: #337ecc;
+          }
+          
+          .download-button {
+            background: #67C23A;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            min-width: 120px;
+            text-align: center;
+            transition: all 0.3s ease;
+          }
+          
+          .download-button:hover {
+            background: #529b2e;
+          }
+          
           @media print {
             .print-instructions {
+              display: none !important;
+            }
+            
+            .mobile-print-buttons {
               display: none !important;
             }
             
@@ -663,6 +710,19 @@ const printViaBrowser = async (label) => {
             img {
               max-width: 280px;
             }
+            
+            .mobile-print-buttons {
+              flex-direction: column;
+              gap: 8px;
+            }
+            
+            .print-button,
+            .download-button {
+              width: 100%;
+              max-width: 280px;
+              padding: 14px 20px;
+              font-size: 16px;
+            }
           }
         </style>
       </head>
@@ -678,12 +738,18 @@ const printViaBrowser = async (label) => {
           
           <img src="${imageUrl}" alt="Label ${labelCode}" onload="setTimeout(() => { ${isMobileDevice ? '' : 'window.print(); setTimeout(() => window.close(), 1000);'} }, 500);" onerror="alert('Gagal memuat gambar label');" />
           
+          <div class="mobile-print-buttons">
+            <button class="print-button" onclick="window.print()">🖨️ Cetak Label</button>
+            <a href="${imageUrl}" download="${labelCode}.png" class="download-button">⬇️ Download PNG</a>
+          </div>
+          
           <div class="print-instructions">
             <strong>📱 Cara Print:</strong><br>
-            1. Tekan tombol print di browser (ikon printer)<br>
+            1. Tekan tombol "Cetak Label" di atas<br>
             2. Pilih printer yang tersedia<br>
             3. Pastikan ukuran kertas sesuai (A4 atau 58mm untuk thermal)<br>
-            4. Klik Print untuk mencetak label
+            4. Klik Print untuk mencetak label<br>
+            5. Atau download PNG untuk print dari aplikasi lain
           </div>
         </div>
       </body>
