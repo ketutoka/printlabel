@@ -105,21 +105,17 @@ def generate_label_with_qr(sender_name: str, shipping_code: str, label_id: int, 
     draw.text((phone_x, y_offset), phone_text, fill=0, font=font_phone)
     y_offset += 16  # Reduced spacing
     
-    # "Resi Pengiriman:" label
+    # "Resi Pengiriman:" label - rata kiri
     resi_label_text = "Resi Pengiriman:"
-    resi_label_bbox = draw.textbbox((0, 0), resi_label_text, font=font_resi_label)
-    resi_label_width = resi_label_bbox[2] - resi_label_bbox[0]
-    resi_label_x = (label_width - resi_label_width) // 2
-    draw.text((resi_label_x, y_offset), resi_label_text, fill=0, font=font_resi_label)
+    draw.text((20, y_offset), resi_label_text, fill=0, font=font_resi_label)  # Rata kiri
     y_offset += 16  # Reduced spacing
     
-    # QR Code - centered
-    qr_x = (label_width - qr_size) // 2
+    # QR Code - rata kiri untuk konsistensi
+    qr_x = 20  # Sama dengan margin kiri text (x position)
     img.paste(qr_img, (qr_x, y_offset))
     y_offset += qr_size + 2  # Minimal space after QR
     
-    # Shipping code below QR - very large like "SPXID050699308944A" in example
-
+    # Shipping code below QR - rata kiri
     max_chars = 28
     words = shipping_code.split()
     line = ""
@@ -128,18 +124,12 @@ def generate_label_with_qr(sender_name: str, shipping_code: str, label_id: int, 
         if len(test) <= max_chars:
             line = test
         else:
-            line_bbox = draw.textbbox((0, 0), line, font=font_resi_code)
-            line_width = line_bbox[2] - line_bbox[0]
-            line_x = (label_width - line_width) // 2
-            draw.text((line_x, y_offset), line, fill=0, font=font_resi_code)
+            draw.text((20, y_offset), line, fill=0, font=font_resi_code)  # Rata kiri
             y_offset += 16  # Reduced spacing
             line = w
 
     if line:
-        line_bbox = draw.textbbox((0, 0), line, font=font_resi_code)
-        line_width = line_bbox[2] - line_bbox[0]
-        line_x = (label_width - line_width) // 2
-        draw.text((line_x, y_offset), line, fill=0, font=font_resi_code)
+        draw.text((20, y_offset), line, fill=0, font=font_resi_code)  # Rata kiri
         y_offset += 10  # Reduced spacing
 
 
@@ -234,11 +224,11 @@ def generate_shipping_label(sender_name: str, sender_phone: str, recipient_name:
     # ======= Bagian Penerima (Optional) =======
     if recipient_name and recipient_name.strip():
         draw.text((x, y), "KEPADA:", font=font_bold_small, fill=0)
-        y += 18
+        y += 15  # Kurangi spacing dari 18 ke 15
 
         # Nama penerima
         draw.text((x, y), recipient_name, font=font_bold_medium, fill=0)
-        y += 20
+        y += 15  # Kurangi spacing dari 20 ke 15
 
         # Alamat (wrap text otomatis) - hanya jika ada
         if recipient_address and recipient_address.strip():
@@ -250,30 +240,30 @@ def generate_shipping_label(sender_name: str, sender_phone: str, recipient_name:
                     line = test
                 else:
                     draw.text((x, y), line, font=font_bold_small, fill=0)
-                    y += 16
+                    y += 14  # Kurangi spacing dari 16 ke 14
                     line = w
             if line:
                 draw.text((x, y), line, font=font_bold_small, fill=0)
-                y += 18
+                y += 15  # Kurangi spacing dari 18 ke 15
 
         # HP penerima - hanya jika ada
         if recipient_phone and recipient_phone.strip():
             draw.text((x, y), f"HP: {recipient_phone}", font=font_bold_small, fill=0)
-            y += 18
+            y += 15  # Kurangi spacing dari 18 ke 15
         
-        y += 20
+        y += 15  # Kurangi spacing dari 20 ke 15
 
     # ======= Bagian Pengirim =======
     draw.text((x, y), "PENGIRIM:", font=font_bold_small, fill=0)
-    y += 18
+    y += 15  # Kurangi spacing dari 18 ke 15
     draw.text((x, y), sender_name, font=font_bold_medium, fill=0)
-    y += 18
+    y += 15  # Kurangi spacing dari 18 ke 15
     draw.text((x, y), f"HP: {sender_phone}", font=font_bold_small, fill=0)
-    y += 20
+    y += 15  # Kurangi spacing dari 20 ke 15
 
     # ======= Bagian Resi/QR Code (Optional) =======
     if shipping_code and shipping_code.strip():
-        y += 15
+        y += 10  # Kurangi spacing dari 15 ke 10
 
         # Generate QR Code untuk resi
         qr = qrcode.QRCode(
@@ -288,25 +278,19 @@ def generate_shipping_label(sender_name: str, sender_phone: str, recipient_name:
         qr_img = qr.make_image(fill_color="black", back_color="white")
         qr_img = qr_img.resize((qr_size, qr_size), Image.NEAREST)
         
-        # Posisi QR di tengah
-        qr_x = (label_width - qr_size) // 2
+        # Posisi QR rata kiri (konsisten dengan text)
+        qr_x = x  # Sama dengan posisi x text lainnya
         img.paste(qr_img, (qr_x, y))
-        y += qr_size + 10
+        y += qr_size + 8  # Kurangi spacing dari 10 ke 8
         
-        # Text resi di bawah QR (center aligned)
+        # Text resi di bawah QR (rata kiri)
         resi_label = "RESI:"
-        resi_bbox = draw.textbbox((0, 0), resi_label, font=font_bold_small)
-        resi_label_width = resi_bbox[2] - resi_bbox[0]
-        resi_label_x = (label_width - resi_label_width) // 2
-        draw.text((resi_label_x, y), resi_label, font=font_bold_small, fill=0)
-        y += 16
+        draw.text((x, y), resi_label, font=font_bold_small, fill=0)  # Rata kiri, tidak center
+        y += 14  # Kurangi spacing dari 16 ke 14
         
-        # Resi code (center aligned)
-        resi_bbox = draw.textbbox((0, 0), shipping_code, font=font_bold_medium)
-        resi_width = resi_bbox[2] - resi_bbox[0]
-        resi_x = (label_width - resi_width) // 2
-        draw.text((resi_x, y), shipping_code, font=font_bold_medium, fill=0)
-        y += 20
+        # Resi code (rata kiri)
+        draw.text((x, y), shipping_code, font=font_bold_medium, fill=0)  # Rata kiri, tidak center
+        y += 15  # Kurangi spacing dari 20 ke 15
 
     # ======= Finishing =======
     # Crop area kosong agar tidak terlalu panjang
