@@ -10,8 +10,8 @@ import os
 from dotenv import load_dotenv
 
 from database import SessionLocal, engine
-from models import Base, User, Label, ShippingLabel
-from schemas import UserCreate, UserResponse, UserLogin, UserUpdate, LabelCreate, LabelResponse, ShippingLabelCreate, ShippingLabelResponse
+from models import Base, User, ShippingLabel
+from schemas import UserCreate, UserResponse, UserLogin, UserUpdate, ShippingLabelCreate, ShippingLabelResponse
 from auth import authenticate_user, create_access_token, get_current_user
 from label_generator import generate_label_with_qr, generate_shipping_label, get_label_image
 
@@ -38,30 +38,6 @@ def run_migrations():
                 """))
                 connection.commit()
                 print("✅ Added phone column to users table")
-            
-            # Check if sender_phone column exists in labels table
-            result = connection.execute(text("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name = 'labels' AND column_name = 'sender_phone';
-            """))
-            
-            if not result.fetchone():
-                # Add sender_phone column to labels table
-                connection.execute(text("""
-                    ALTER TABLE labels 
-                    ADD COLUMN sender_phone VARCHAR(20) NOT NULL DEFAULT '0818986657';
-                """))
-                
-                # Update existing records that might still have NULL values
-                connection.execute(text("""
-                    UPDATE labels 
-                    SET sender_phone = '0818986657' 
-                    WHERE sender_phone IS NULL OR sender_phone = '';
-                """))
-                
-                connection.commit()
-                print("✅ Added sender_phone column to labels table")
             
             print("✅ Database migration completed")
     except Exception as e:
@@ -191,128 +167,6 @@ def update_current_user_profile(
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-# Label endpoints
-@app.post("/labels/generate", response_model=LabelResponse)
-def generate_label(
-    label: LabelCreate, 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    from crud import create_label
-    
-    # Create label in database
-    db_label = create_label(db, label, current_user.id)
-    
-    # Generate QR code and label image
-    label_image_path = generate_label_with_qr(
-        sender_name=label.sender_name,
-        shipping_code=label.shipping_code,
-        label_id=db_label.id,
-        sender_phone=label.sender_phone
-    )
-    
-    # Update label with image path
-    db_label.image_path = label_image_path
-    db.commit()
-    
-    return LabelResponse(
-        id=db_label.id,
-        sender_name=db_label.sender_name,
-        sender_phone=db_label.sender_phone,
-        shipping_code=db_label.shipping_code,
-        image_path=db_label.image_path,
-        created_at=db_label.created_at
-    )
-
-@app.get("/labels", response_model=list[LabelResponse])
-def get_user_labels(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    from crud import get_user_labels
-    
-    labels = get_user_labels(db, current_user.id)
-    return [
-        LabelResponse(
-            id=label.id,
-            sender_name=label.sender_name,
-            sender_phone=getattr(label, 'sender_phone', '0818986657'),  # Handle missing field
-            shipping_code=label.shipping_code,
-            image_path=label.image_path,
-            created_at=label.created_at
-        )
-        for label in labels
-    ]
-
-@app.get("/labels/print/{label_id}")
-def get_label_for_print(
-    label_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    from crud import get_label
-    
-    label = get_label(db, label_id, current_user.id)
-    if not label:
-        raise HTTPException(status_code=404, detail="Label not found")
-    
-    return {
-        "id": label.id,
-        "sender_name": label.sender_name,
-        "shipping_code": label.shipping_code,
-        "image_path": label.image_path,
-        "qr_data": label.shipping_code
-    }
-
-@app.get("/labels/preview/{label_id}")
-def preview_label_image(
-    label_id: int,
-    token: Optional[str] = None,
-    db: Session = Depends(get_db)
-):
-    from crud import get_label
-    from jose import JWTError, jwt
-    from auth import SECRET_KEY, ALGORITHM
-    from crud import get_user_by_email
-    
-    current_user = None
-    
-    # Try to get token from query parameter first
-    if token:
-        try:
-            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-            email: str = payload.get("sub")
-            if email:
-                current_user = get_user_by_email(db, email)
-        except JWTError:
-            pass
-    
-    # If no token in query, try to get from header
-    if not current_user:
-        try:
-            from fastapi import Request
-            # This is a fallback, but for image requests we'll rely on token parameter
-            pass
-        except:
-            pass
-    
-    if not current_user:
-        raise HTTPException(status_code=401, detail="Authentication required")
-    
-    label = get_label(db, label_id, current_user.id)
-    if not label:
-        raise HTTPException(status_code=404, detail="Label not found")
-    
-    # Check if image file exists
-    if not label.image_path or not os.path.exists(label.image_path):
-        raise HTTPException(status_code=404, detail="Label image not found")
-    
-    return FileResponse(
-        path=label.image_path,
-        media_type="image/png",
-        filename=f"preview_label_{label.shipping_code}.png"
-    )
 
 # Shipping Label endpoints
 @app.post("/shipping-labels/generate", response_model=ShippingLabelResponse)
@@ -446,48 +300,6 @@ def preview_shipping_label_image(
     )
 
 # Delete endpoints - Bulk operations MUST come before parameterized routes
-@app.delete("/labels/bulk")
-def bulk_delete_simple_labels(
-    label_ids: list[int],
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    from crud import delete_label
-    
-    results = {
-        "deleted_count": 0,
-        "failed_count": 0,
-        "deleted_files": [],
-        "errors": []
-    }
-    
-    for label_id in label_ids:
-        try:
-            image_path = delete_label(db, label_id, current_user.id)
-            
-            if image_path:
-                results["deleted_count"] += 1
-                results["deleted_files"].append(image_path)
-                
-                # Delete image file if exists
-                if os.path.exists(image_path):
-                    try:
-                        os.remove(image_path)
-                    except OSError as e:
-                        print(f"Warning: Could not delete image file {image_path}: {e}")
-            else:
-                results["failed_count"] += 1
-                results["errors"].append(f"Label {label_id} not found")
-                
-        except Exception as e:
-            results["failed_count"] += 1
-            results["errors"].append(f"Label {label_id}: {str(e)}")
-    
-    return {
-        "message": f"Bulk delete completed. {results['deleted_count']} deleted, {results['failed_count']} failed.",
-        **results
-    }
-
 @app.delete("/shipping-labels/bulk")
 def bulk_delete_shipping_labels(
     label_ids: list[int],
@@ -531,29 +343,6 @@ def bulk_delete_shipping_labels(
     }
 
 # Single delete endpoints - MUST come after bulk endpoints
-@app.delete("/labels/{label_id}")
-def delete_simple_label(
-    label_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    from crud import delete_label
-    
-    # Delete from database and get image path
-    image_path = delete_label(db, label_id, current_user.id)
-    
-    if not image_path:
-        raise HTTPException(status_code=404, detail="Label not found")
-    
-    # Delete image file if exists
-    if image_path and os.path.exists(image_path):
-        try:
-            os.remove(image_path)
-        except OSError as e:
-            print(f"Warning: Could not delete image file {image_path}: {e}")
-    
-    return {"message": "Label deleted successfully", "deleted_file": image_path}
-
 @app.delete("/shipping-labels/{label_id}")
 def delete_shipping_label_endpoint(
     label_id: int,

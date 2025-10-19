@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from models import User, Label, ShippingLabel
-from schemas import UserCreate, LabelCreate, ShippingLabelCreate, UserUpdate
+from models import User, ShippingLabel
+from schemas import UserCreate, ShippingLabelCreate, UserUpdate
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -52,27 +52,6 @@ def update_user(db: Session, user_id: int, user_update: UserUpdate):
         db.refresh(db_user)
     return db_user
 
-def create_label(db: Session, label: LabelCreate, user_id: int):
-    db_label = Label(
-        sender_name=label.sender_name,
-        sender_phone=label.sender_phone,
-        shipping_code=label.shipping_code,
-        user_id=user_id
-    )
-    db.add(db_label)
-    db.commit()
-    db.refresh(db_label)
-    return db_label
-
-def get_label(db: Session, label_id: int, user_id: int):
-    return db.query(Label).filter(
-        Label.id == label_id, 
-        Label.user_id == user_id
-    ).first()
-
-def get_user_labels(db: Session, user_id: int):
-    return db.query(Label).filter(Label.user_id == user_id).all()
-
 # Shipping Label functions
 def create_shipping_label(db: Session, shipping_label: ShippingLabelCreate, user_id: int):
     db_shipping_label = ShippingLabel(
@@ -98,25 +77,6 @@ def get_shipping_label(db: Session, label_id: int, user_id: int):
 
 def get_user_shipping_labels(db: Session, user_id: int):
     return db.query(ShippingLabel).filter(ShippingLabel.user_id == user_id).all()
-
-def delete_label(db: Session, label_id: int, user_id: int):
-    """Delete a simple label and return the image path for file cleanup"""
-    label = db.query(Label).filter(
-        Label.id == label_id, 
-        Label.user_id == user_id
-    ).first()
-    
-    if not label:
-        return None
-    
-    # Store image path for file cleanup
-    image_path = label.image_path
-    
-    # Delete from database
-    db.delete(label)
-    db.commit()
-    
-    return image_path
 
 def delete_shipping_label(db: Session, label_id: int, user_id: int):
     """Delete a shipping label and return the image path for file cleanup"""

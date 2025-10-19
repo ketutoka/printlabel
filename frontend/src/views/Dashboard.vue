@@ -102,7 +102,7 @@
                   type="primary" 
                   size="small" 
                   @click="refreshLabels"
-                  :loading="labelStore.loading"
+                  :loading="shippingStore.loading"
                 >
                   🔄 Refresh
                 </el-button>
@@ -110,7 +110,7 @@
             </div>
           </template>
           
-          <div v-if="(labelStore.loading || shippingStore.loading) && filteredLabels.length === 0" class="loading-state">
+          <div v-if="shippingStore.loading && filteredLabels.length === 0" class="loading-state">
             <el-icon class="is-loading"><Loading /></el-icon>
             <p>Memuat daftar label...</p>
           </div>
@@ -138,7 +138,7 @@
                       type="danger" 
                       size="small" 
                       @click="bulkDeleteLabels"
-                      :loading="labelStore.loading || shippingStore.loading"
+                      :loading="shippingStore.loading"
                     >
                       <el-icon><Delete /></el-icon>
                       Hapus Terpilih ({{ selectedLabels.length }})
@@ -310,14 +310,12 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { User, Setting, SwitchButton, ArrowDown, View, Printer, Search, Delete, Loading } from '@element-plus/icons-vue'
-import { useLabelStore } from '../stores/label'
 import { useShippingStore } from '../stores/shipping'
 import { useUserStore } from '../stores/user'
 import api from '../services/api'
 
 const router = useRouter()
 
-const labelStore = useLabelStore()
 const shippingStore = useShippingStore()
 const userStore = useUserStore()
 
@@ -386,29 +384,21 @@ const paginatedLabels = computed(() => {
 
 const todayLabelsCount = computed(() => {
   const today = new Date().toDateString()
-  const simpleToday = labelStore.labels.filter(label => 
+  return shippingStore.shippingLabels.filter(label => 
     new Date(label.created_at).toDateString() === today
   ).length
-  const shippingToday = shippingStore.shippingLabels.filter(label => 
-    new Date(label.created_at).toDateString() === today
-  ).length
-  return simpleToday + shippingToday
 })
 
 const weekLabelsCount = computed(() => {
   const weekAgo = new Date()
   weekAgo.setDate(weekAgo.getDate() - 7)
-  const simpleWeek = labelStore.labels.filter(label => 
+  return shippingStore.shippingLabels.filter(label => 
     new Date(label.created_at) > weekAgo
   ).length
-  const shippingWeek = shippingStore.shippingLabels.filter(label => 
-    new Date(label.created_at) > weekAgo
-  ).length
-  return simpleWeek + shippingWeek
 })
 
 const totalLabelsCount = computed(() => {
-  return labelStore.labels.length + shippingStore.shippingLabels.length
+  return shippingStore.shippingLabels.length
 })
 
 // Responsive dialog properties
