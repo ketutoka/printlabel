@@ -185,77 +185,139 @@ def get_label_image(label_id: int, shipping_code: str) -> str:
     filename = f"label_{label_id}_{shipping_code}.png"
     return os.path.join("labels", filename)
 
-def generate_shipping_label(sender_name: str, sender_phone: str, recipient_name: str, 
-                            recipient_address: str, recipient_phone: str, 
-                            shipping_code: str, label_id: int) -> str:
+def generate_shipping_label(sender_name: str, sender_phone: str, recipient_name: str = "", 
+                            recipient_address: str = "", recipient_phone: str = "", 
+                            shipping_code: str = "", label_id: int = 0, label_size: str = "58mm") -> str:
     """
     Generate ultra-sharp 1-bit thermal printer label (no dithering, no blur)
-    Compatible with 58mm printers (203 DPI)
+    Compatible with 58mm and 80mm printers (203 DPI)
+    Recipient and shipping code are optional - will be skipped if empty
     """
     labels_dir = "labels"
     os.makedirs(labels_dir, exist_ok=True)
 
-    # Thermal 58mm = 203px width
-    label_width = 203
-    label_height = 300  # cukup panjang untuk alamat panjang
+    # Determine label width based on size
+    if label_size == "80mm":
+        label_width = 284  # 80mm ≈ 284px at 203 DPI
+        font_large = 15
+        font_medium = 13
+        font_small = 11
+        qr_size = 80
+        max_chars = 38  # More characters for wider label
+    else:  # Default 58mm
+        label_width = 203  # 58mm ≈ 203px at 203 DPI
+        font_large = 13
+        font_medium = 11
+        font_small = 10
+        qr_size = 60
+        max_chars = 28
+
+    label_height = 350  # Dynamic height based on content
 
     # Gunakan mode '1' langsung untuk hasil hitam/putih tajam
     img = Image.new('1', (label_width, label_height), 1)  # 1 = putih
     draw = ImageDraw.Draw(img)
 
-    # Gunakan font tebal agar solid di thermal printer
+    # Gunakan font dengan ukuran sesuai label
     try:
-        font_bold_large = ImageFont.truetype("arial.ttf", 13)
-        font_bold_medium = ImageFont.truetype("arial.ttf", 11)
-        font_bold_small = ImageFont.truetype("arial.ttf", 10)
+        font_bold_large = ImageFont.truetype("arial.ttf", font_large)
+        font_bold_medium = ImageFont.truetype("arial.ttf", font_medium)
+        font_bold_small = ImageFont.truetype("arial.ttf", font_small)
     except:
         font_bold_large = ImageFont.load_default()
         font_bold_medium = ImageFont.load_default()
         font_bold_small = ImageFont.load_default()
 
-    y = 10
+    y = 15  # Start position
     x = 20
 
-    # ======= Bagian Penerima =======
-    draw.text((x, y), "KEPADA:", font=font_bold_small, fill=0)
-    y += 16
-
-    # Nama penerima
-    draw.text((x, y), recipient_name, font=font_bold_medium, fill=0)
-    y += 18
-
-    # Alamat (wrap text otomatis)
-    max_chars = 28
-    words = recipient_address.split()
-    line = ""
-    for w in words:
-        test = line + " " + w if line else w
-        if len(test) <= max_chars:
-            line = test
-        else:
-            draw.text((x, y), line, font=font_bold_small, fill=0)
-            y += 16
-            line = w
-    if line:
-        draw.text((x, y), line, font=font_bold_small, fill=0)
+    # ======= Bagian Penerima (Optional) =======
+    if recipient_name and recipient_name.strip():
+        draw.text((x, y), "KEPADA:", font=font_bold_small, fill=0)
         y += 18
 
-    draw.text((x, y), f"HP: {recipient_phone}", font=font_bold_small, fill=0)
-    y += 26
+        # Nama penerima
+        draw.text((x, y), recipient_name, font=font_bold_medium, fill=0)
+        y += 20
+
+        # Alamat (wrap text otomatis) - hanya jika ada
+        if recipient_address and recipient_address.strip():
+            words = recipient_address.split()
+            line = ""
+            for w in words:
+                test = line + " " + w if line else w
+                if len(test) <= max_chars:
+                    line = test
+                else:
+                    draw.text((x, y), line, font=font_bold_small, fill=0)
+                    y += 16
+                    line = w
+            if line:
+                draw.text((x, y), line, font=font_bold_small, fill=0)
+                y += 18
+
+        # HP penerima - hanya jika ada
+        if recipient_phone and recipient_phone.strip():
+            draw.text((x, y), f"HP: {recipient_phone}", font=font_bold_small, fill=0)
+            y += 18
+        
+        y += 20
 
     # ======= Bagian Pengirim =======
     draw.text((x, y), "PENGIRIM:", font=font_bold_small, fill=0)
-    y += 16
+    y += 18
     draw.text((x, y), sender_name, font=font_bold_medium, fill=0)
-    y += 16
+    y += 18
     draw.text((x, y), f"HP: {sender_phone}", font=font_bold_small, fill=0)
-    y += 10
+    y += 20
+
+    # ======= Bagian Resi/QR Code (Optional) =======
+    if shipping_code and shipping_code.strip():
+        y += 15
+
+        # Generate QR Code untuk resi
+        qr = qrcode.QRCode(
+            version=2 if label_size == "58mm" else 3,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=3 if label_size == "58mm" else 4,
+            border=1,
+        )
+        qr.add_data(shipping_code)
+        qr.make(fit=True)
+        
+        qr_img = qr.make_image(fill_color="black", back_color="white")
+        qr_img = qr_img.resize((qr_size, qr_size), Image.NEAREST)
+        
+        # Posisi QR di tengah
+        qr_x = (label_width - qr_size) // 2
+        img.paste(qr_img, (qr_x, y))
+        y += qr_size + 10
+        
+        # Text resi di bawah QR (center aligned)
+        resi_label = "RESI:"
+        resi_bbox = draw.textbbox((0, 0), resi_label, font=font_bold_small)
+        resi_label_width = resi_bbox[2] - resi_bbox[0]
+        resi_label_x = (label_width - resi_label_width) // 2
+        draw.text((resi_label_x, y), resi_label, font=font_bold_small, fill=0)
+        y += 16
+        
+        # Resi code (center aligned)
+        resi_bbox = draw.textbbox((0, 0), shipping_code, font=font_bold_medium)
+        resi_width = resi_bbox[2] - resi_bbox[0]
+        resi_x = (label_width - resi_width) // 2
+        draw.text((resi_x, y), shipping_code, font=font_bold_medium, fill=0)
+        y += 20
 
     # ======= Finishing =======
     # Crop area kosong agar tidak terlalu panjang
-    img_cropped = img.crop((0, 0, label_width, min(y + 5, label_height)))
+    img_cropped = img.crop((0, 0, label_width, min(y + 10, label_height)))
 
-    filename = f"thermal_label_{label_id}_{shipping_code or 'nocode'}.bmp"
+    # Generate filename berdasarkan ukuran dan ada tidaknya shipping code
+    if shipping_code and shipping_code.strip():
+        filename = f"thermal_label_{label_size}_{label_id}_{shipping_code}.bmp"
+    else:
+        filename = f"thermal_label_{label_size}_{label_id}_nocode.bmp"
+    
     filepath = os.path.join(labels_dir, filename)
     img_cropped.save(filepath, format="BMP")
 

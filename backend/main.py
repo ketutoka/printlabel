@@ -323,6 +323,10 @@ def generate_shipping_label_endpoint(
 ):
     from crud import create_shipping_label
     
+    # Transform shipping code to uppercase if provided
+    if shipping_label.shipping_code:
+        shipping_label.shipping_code = shipping_label.shipping_code.upper()
+    
     # Create shipping label in database
     db_shipping_label = create_shipping_label(db, shipping_label, current_user.id)
     
@@ -334,7 +338,8 @@ def generate_shipping_label_endpoint(
         recipient_address=shipping_label.recipient_address,
         recipient_phone=shipping_label.recipient_phone,
         shipping_code=shipping_label.shipping_code,
-        label_id=db_shipping_label.id
+        label_id=db_shipping_label.id,
+        label_size=shipping_label.label_size or "58mm"  # Pass label size with default
     )
     
     # Update shipping label with image path
@@ -370,6 +375,7 @@ def get_user_shipping_labels(
             recipient_address=label.recipient_address,
             recipient_phone=label.recipient_phone,
             shipping_code=label.shipping_code,
+            label_size=getattr(label, 'label_size', '58mm'),  # Include label_size with default
             image_path=label.image_path,
             created_at=label.created_at
         )

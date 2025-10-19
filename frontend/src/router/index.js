@@ -27,12 +27,13 @@ const routes = [
     component: () => import('../views/Dashboard.vue'),
     meta: { requiresAuth: true }
   },
-  {
-    path: '/create-label',
-    name: 'CreateLabel',
-    component: () => import('../views/CreateLabel.vue'),
-    meta: { requiresAuth: true }
-  },
+  // Disabled - merged with shipping label
+  // {
+  //   path: '/create-label',
+  //   name: 'CreateLabel',
+  //   component: () => import('../views/CreateLabel.vue'),
+  //   meta: { requiresAuth: true }
+  // },
   {
     path: '/create-shipping-label',
     name: 'CreateShippingLabel',

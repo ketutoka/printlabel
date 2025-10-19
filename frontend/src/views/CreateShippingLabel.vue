@@ -3,7 +3,10 @@
     <el-card shadow="hover">
       <template #header>
         <div class="card-header">
-          <span>📦 Buat Label Pengiriman</span>
+          <span>🏷️ Buat Label Pengiriman</span>
+          <small style="color: #909399; font-size: 12px; display: block; margin-top: 5px;">
+            Field penerima dan resi bersifat opsional
+          </small>
         </div>
       </template>
 
@@ -36,13 +39,13 @@
         </el-form-item>
 
         <el-divider content-position="left">
-          <span style="color: #67c23a; font-weight: bold;">📥 PENERIMA</span>
+          <span style="color: #67c23a; font-weight: bold;">📥 PENERIMA (Opsional)</span>
         </el-divider>
 
         <el-form-item label="Nama Penerima" prop="recipient_name">
           <el-input 
             v-model="shippingForm.recipient_name" 
-            placeholder="Nama lengkap penerima"
+            placeholder="Nama lengkap penerima (kosongkan jika tidak diperlukan)"
             clearable
           />
         </el-form-item>
@@ -52,7 +55,7 @@
             v-model="shippingForm.recipient_address" 
             type="textarea"
             :rows="3"
-            placeholder="Alamat lengkap penerima (jalan, RT/RW, kelurahan, kecamatan, kota, provinsi, kode pos)"
+            placeholder="Alamat lengkap penerima (kosongkan jika tidak diperlukan)"
             clearable
           />
         </el-form-item>
@@ -60,7 +63,7 @@
         <el-form-item label="No HP Penerima" prop="recipient_phone">
           <el-input 
             v-model="shippingForm.recipient_phone" 
-            placeholder="Contoh: 081234567890"
+            placeholder="No HP penerima (kosongkan jika tidak diperlukan)"
             clearable
           />
         </el-form-item>
@@ -74,6 +77,8 @@
             v-model="shippingForm.shipping_code" 
             placeholder="Scan QR Code/Barcode atau ketik manual"
             clearable
+            style="text-transform: uppercase;"
+            @input="handleShippingCodeInput"
           >
             <template #append>
               <el-button 
@@ -88,6 +93,30 @@
           </el-input>
           <div style="font-size: 12px; color: #909399; margin-top: 5px;">
             💡 Tips: Kode resi akan disembunyikan jika dikosongkan
+          </div>
+        </el-form-item>
+
+        <el-divider content-position="left">
+          <span style="color: #e6a23c; font-weight: bold;">📏 UKURAN LABEL</span>
+        </el-divider>
+
+        <el-form-item label="Ukuran Printer" prop="label_size">
+          <el-radio-group v-model="shippingForm.label_size" class="label-size-group">
+            <el-radio-button label="58mm" size="large">
+              <div class="radio-content">
+                <span class="radio-title">📱 58mm</span>
+                <span class="radio-description">Thermal mini (203px)</span>
+              </div>
+            </el-radio-button>
+            <el-radio-button label="80mm" size="large">
+              <div class="radio-content">
+                <span class="radio-title">🖨️ 80mm</span>
+                <span class="radio-description">Thermal standar (284px)</span>
+              </div>
+            </el-radio-button>
+          </el-radio-group>
+          <div style="font-size: 12px; color: #909399; margin-top: 8px;">
+            💡 Pilih sesuai dengan lebar kertas thermal printer Anda
           </div>
         </el-form-item>
 
@@ -293,7 +322,8 @@ const shippingForm = reactive({
   recipient_name: '',
   recipient_address: '',
   recipient_phone: '',
-  shipping_code: ''
+  shipping_code: '',
+  label_size: '58mm'  // Default ke 58mm
 })
 
 const shippingRules = {
@@ -305,15 +335,33 @@ const shippingRules = {
     { pattern: /^[0-9+\-\s()]{10,15}$/, message: 'Format no HP tidak valid', trigger: 'blur' }
   ],
   recipient_name: [
-    { required: true, message: 'Nama penerima harus diisi', trigger: 'blur' }
+    // Optional field - no required validation
   ],
   recipient_address: [
-    { required: true, message: 'Alamat penerima harus diisi', trigger: 'blur' },
-    { min: 10, message: 'Alamat harus minimal 10 karakter', trigger: 'blur' }
+    // Optional field - minimum validation only if filled
+    { 
+      validator: (rule, value, callback) => {
+        if (value && value.length > 0 && value.length < 10) {
+          callback(new Error('Alamat harus minimal 10 karakter jika diisi'))
+        } else {
+          callback()
+        }
+      }, 
+      trigger: 'blur' 
+    }
   ],
   recipient_phone: [
-    { required: true, message: 'No HP penerima harus diisi', trigger: 'blur' },
-    { pattern: /^[0-9+\-\s()]{10,15}$/, message: 'Format no HP tidak valid', trigger: 'blur' }
+    // Optional field - format validation only if filled
+    { 
+      validator: (rule, value, callback) => {
+        if (value && value.length > 0 && !/^[0-9+\-\s()]{10,15}$/.test(value)) {
+          callback(new Error('Format no HP tidak valid'))
+        } else {
+          callback()
+        }
+      }, 
+      trigger: 'blur' 
+    }
   ],
   shipping_code: [
     { min: 3, message: 'Kode resi minimal 3 karakter jika diisi', trigger: 'blur' },
@@ -323,6 +371,9 @@ const shippingRules = {
       message: 'Kode resi hanya boleh berisi huruf, angka, -, _, #, /', 
       trigger: 'blur' 
     }
+  ],
+  label_size: [
+    { required: true, message: 'Ukuran label harus dipilih', trigger: 'change' }
   ]
 }
 
@@ -368,8 +419,8 @@ const openScanner = () => {
 }
 
 const handleScanSuccess = (scannedCode) => {
-  shippingForm.shipping_code = scannedCode
-  ElMessage.success(`Berhasil scan kode: ${scannedCode}`)
+  shippingForm.shipping_code = scannedCode.toUpperCase()
+  ElMessage.success(`Berhasil scan kode: ${scannedCode.toUpperCase()}`)
   
   // Clear any validation errors
   if (shippingFormRef.value) {
@@ -379,6 +430,11 @@ const handleScanSuccess = (scannedCode) => {
 
 const handleScanError = (error) => {
   ElMessage.error(`Error scanning: ${error}`)
+}
+
+// Handle shipping code input to make it uppercase
+const handleShippingCodeInput = (value) => {
+  shippingForm.shipping_code = value.toUpperCase()
 }
 
 const showLabelPreview = async () => {
@@ -803,6 +859,8 @@ const resetShippingForm = () => {
       shippingForm[key] = userStore.user.name
     } else if (key === 'sender_phone' && userStore.user?.phone) {
       shippingForm[key] = userStore.user.phone
+    } else if (key === 'label_size') {
+      shippingForm[key] = '58mm'  // Reset to default size
     } else {
       shippingForm[key] = ''
     }
@@ -1204,6 +1262,101 @@ watch(showActualPreview, (newValue) => {
   
   :deep(.el-form-item) {
     margin-bottom: 10px;
+  }
+}
+
+/* Label Size Radio Group Styles */
+.label-size-group {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+
+:deep(.label-size-group .el-radio-button) {
+  flex: 1;
+  min-width: 140px;
+  max-width: 200px;
+}
+
+:deep(.label-size-group .el-radio-button__inner) {
+  width: 100%;
+  height: 80px;
+  border-radius: 12px;
+  border: 2px solid #dcdfe6;
+  background: #fafafa;
+  padding: 12px 16px;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-weight: 500;
+}
+
+:deep(.label-size-group .el-radio-button__inner:hover) {
+  border-color: #409eff;
+  background: #f0f8ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
+}
+
+:deep(.label-size-group .el-radio-button.is-active .el-radio-button__inner) {
+  border-color: #409eff;
+  background: linear-gradient(135deg, #409eff, #66b3ff);
+  color: white;
+  box-shadow: 0 6px 16px rgba(64, 158, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.radio-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+}
+
+.radio-title {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.radio-description {
+  font-size: 12px;
+  opacity: 0.8;
+  line-height: 1.2;
+}
+
+:deep(.label-size-group .el-radio-button.is-active .radio-description) {
+  opacity: 0.9;
+}
+
+/* Mobile responsive for label size */
+@media (max-width: 480px) {
+  .label-size-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  :deep(.label-size-group .el-radio-button) {
+    max-width: 100%;
+  }
+  
+  :deep(.label-size-group .el-radio-button__inner) {
+    height: 70px;
+    padding: 10px 12px;
+  }
+  
+  .radio-title {
+    font-size: 14px;
+  }
+  
+  .radio-description {
+    font-size: 11px;
   }
 }
 </style>

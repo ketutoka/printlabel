@@ -53,19 +53,21 @@ class LabelResponse(BaseModel):
 class ShippingLabelCreate(BaseModel):
     sender_name: str
     sender_phone: str
-    recipient_name: str
-    recipient_address: str
-    recipient_phone: str
+    recipient_name: Optional[str] = ""  # Made optional with empty default
+    recipient_address: Optional[str] = ""  # Made optional with empty default
+    recipient_phone: Optional[str] = ""  # Made optional with empty default
     shipping_code: Optional[str] = ""  # Made optional with empty default
+    label_size: Optional[str] = "58mm"  # New field for label size
 
 class ShippingLabelResponse(BaseModel):
     id: int
     sender_name: str
     sender_phone: str
-    recipient_name: str
-    recipient_address: str
-    recipient_phone: str
+    recipient_name: Optional[str] = ""  # Made optional with empty default
+    recipient_address: Optional[str] = ""  # Made optional with empty default
+    recipient_phone: Optional[str] = ""  # Made optional with empty default
     shipping_code: Optional[str] = ""  # Made optional with empty default
+    label_size: Optional[str] = "58mm"  # New field for label size
     image_path: Optional[str] = None
     created_at: datetime
     

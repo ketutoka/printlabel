@@ -82,6 +82,7 @@ def create_shipping_label(db: Session, shipping_label: ShippingLabelCreate, user
         recipient_address=shipping_label.recipient_address,
         recipient_phone=shipping_label.recipient_phone,
         shipping_code=shipping_label.shipping_code,
+        label_size=shipping_label.label_size or "58mm",  # Add label_size with default
         user_id=user_id
     )
     db.add(db_shipping_label)

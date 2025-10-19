@@ -1,96 +1,80 @@
 <template>
   <div class="dashboard-container">
-    <!-- User Header with Profile Dropdown -->
-    <el-row style="margin-bottom: 20px;">
-      <el-col :span="24">
-        <el-card shadow="never" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-          <div class="user-header">
-            <div class="user-info">
-              <p>Aplikasi cetak label thermal printer 58mm</p>
+    <!-- Frozen Header with App Title and Profile -->
+    <div class="frozen-header">
+      <div class="header-content">
+        <div class="app-title">
+          <h3>🏷️ Label Thermal Printer</h3>
+        </div>
+        <div class="profile-section">
+          <el-dropdown @command="handleCommand" placement="bottom-end" trigger="click" :hide-on-click="true">
+            <div class="profile-trigger" title="Menu Profil">
+              <el-avatar 
+                :size="36" 
+                style="background: linear-gradient(135deg, #409EFF, #66b3ff); color: white; cursor: pointer; border: 2px solid rgba(255, 255, 255, 0.3);"
+              >
+                <el-icon><User /></el-icon>
+              </el-avatar>
             </div>
-            <div class="user-profile">
-              <el-dropdown @command="handleCommand" placement="bottom-end">
-                <div class="profile-trigger">
-                  <el-avatar 
-                    :size="40" 
-                    style="background-color: rgba(255,255,255,0.2); color: white; cursor: pointer;"
-                  >
-                    <el-icon><User /></el-icon>
-                  </el-avatar>
-                  <span class="username">{{ userStore.user?.name || 'User' }}</span>
-                  <el-icon class="dropdown-icon"><ArrowDown /></el-icon>
-                </div>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item disabled style="color: #909399; font-size: 12px;">
-                      {{ userStore.user?.email }}
-                    </el-dropdown-item>
-                    <el-dropdown-item divided command="profile">
-                      <el-icon><Setting /></el-icon>
-                      Edit Profil
-                    </el-dropdown-item>
-                    <el-dropdown-item command="logout" style="color: #F56C6C;">
-                      <el-icon><SwitchButton /></el-icon>
-                      Logout
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+            <template #dropdown>
+              <el-dropdown-menu class="profile-dropdown">
+                <el-dropdown-item disabled class="user-info-item">
+                  <div class="user-info-content">
+                    <el-avatar 
+                      :size="32" 
+                      style="background: linear-gradient(135deg, #409EFF, #66b3ff); margin-bottom: 8px;"
+                    >
+                      <el-icon><User /></el-icon>
+                    </el-avatar>
+                    <div class="user-details">
+                      <div class="user-name">{{ userStore.user?.name || 'User' }}</div>
+                      <div class="user-email">{{ userStore.user?.email }}</div>
+                    </div>
+                  </div>
+                </el-dropdown-item>
+                <el-dropdown-item divided command="profile" class="menu-item">
+                  <el-icon class="menu-icon"><Setting /></el-icon>
+                  <span>Edit Profil</span>
+                </el-dropdown-item>
+                <el-dropdown-item command="logout" class="menu-item logout-item">
+                  <el-icon class="menu-icon"><SwitchButton /></el-icon>
+                  <span>Logout</span>
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+      </div>
+    </div>
     
     <el-row :gutter="20">
       <!-- Welcome Card -->
       <el-col :span="24">
         <el-card shadow="hover" style="margin-bottom: 20px;">
           <div class="welcome-section">
-            <h2>🏷️ Selamat Datang di Print Label App</h2>
-            <p>Aplikasi untuk mencetak label paket dengan QR Code untuk thermal printer 58mm</p>
+            <h2>👋 Selamat Datang, {{ userStore.user?.name || 'User' }}!</h2>
+            <p>Kelola dan cetak label paket dengan QR Code untuk thermal printer 58mm dan 80mm</p>
           </div>
         </el-card>
       </el-col>
 
       <!-- Quick Actions - Responsive Grid -->
-      <el-col :xs="24" :sm="12" :md="12" :lg="12" :xl="12">
+      <el-col :xs="24" :sm="24" :md="24" :lg="24" :xl="24">
         <el-card shadow="hover" class="action-card">
           <template #header>
             <div class="card-header">
-              <span>📝 Buat Label Baru</span>
+              <span>🏷️ Buat Label Pengiriman</span>
             </div>
           </template>
           <div class="card-content">
-            <p>Buat dan cetak label paket dengan QR Code</p>
+            <p>Buat dan cetak label paket dengan QR Code. Penerima dan resi bersifat opsional.</p>
             <el-button 
               type="primary" 
-              size="large"
-              @click="$router.push('/create-label')"
-              style="width: 100%; margin-top: 15px;"
-            >
-              Buat Label
-            </el-button>
-          </div>
-        </el-card>
-      </el-col>
-
-      <el-col :xs="24" :sm="12" :md="12" :lg="12" :xl="12">
-        <el-card shadow="hover" class="action-card">
-          <template #header>
-            <div class="card-header">
-              <span>📦 Label Pengiriman</span>
-            </div>
-          </template>
-          <div class="card-content">
-            <p>Buat label pengiriman lengkap dengan alamat</p>
-            <el-button 
-              type="warning" 
               size="large"
               @click="$router.push('/create-shipping-label')"
               style="width: 100%; margin-top: 15px;"
             >
-              Buat Label Kirim
+              🏷️ Buat Label
             </el-button>
           </div>
         </el-card>
@@ -133,7 +117,7 @@
           
           <div v-else-if="filteredLabels.length === 0" class="empty-state">
             <el-empty description="Belum ada label yang dibuat">
-              <el-button type="primary" @click="$router.push('/create-label')">
+              <el-button type="primary" @click="$router.push('/create-shipping-label')">
                 Buat Label Pertama
               </el-button>
             </el-empty>
@@ -205,14 +189,18 @@
                   </el-dropdown>
                 </template>
               </el-table-column>
-              <el-table-column prop="type" label="Jenis" width="100">
+              <el-table-column prop="label_size" label="Ukuran" width="100">
                 <template #default="scope">
-                  <el-tag :type="scope.row.type === 'simple' ? 'success' : 'warning'">
-                    {{ scope.row.type === 'simple' ? '📝 Sederhana' : '📦 Kirim' }}
+                  <el-tag :type="scope.row.label_size === '58mm' ? 'success' : 'warning'">
+                    {{ scope.row.label_size || '58mm' }} <!-- Debug: Show actual value -->
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="shipping_code" label="Kode/Resi" width="180" />
+              <el-table-column prop="shipping_code" label="Kode/Resi" width="180">
+                <template #default="scope">
+                  {{ scope.row.shipping_code ? scope.row.shipping_code.toUpperCase() : '(Tanpa Resi)' }}
+                </template>
+              </el-table-column>
               <el-table-column prop="display_name" label="Detail" />
               <el-table-column prop="created_at" label="Tanggal Dibuat" width="180">
                 <template #default="scope">
@@ -281,7 +269,7 @@
     >
       <div v-if="previewLabelData" class="preview-container">
         <div class="label-info">
-          <h3>📦 {{ previewLabelData.shipping_code }}</h3>
+          <h3>📦 {{ previewLabelData.shipping_code ? previewLabelData.shipping_code.toUpperCase() : 'LABEL' }}</h3>
           <p><strong>Pengirim:</strong> {{ previewLabelData.sender_name }}</p>
           <p><strong>Tanggal:</strong> {{ formatDate(previewLabelData.created_at) }}</p>
         </div>
@@ -348,24 +336,27 @@ const selectedLabels = ref([])
 const isAllSelected = ref(false)
 
 const recentLabels = computed(() => {
-  // Gabungkan simple labels dan shipping labels
-  const simpleLabels = labelStore.labels.map(label => ({
-    ...label,
-    type: 'simple',
-    display_name: label.sender_name || 'Label Sederhana',
-    shipping_code: label.shipping_code || '-'
-  }))
+  // Gunakan hanya shipping labels (unified system)
+  const shippingLabels = shippingStore.shippingLabels.map(label => {
+    // Debug: Log label data untuk melihat label_size
+    console.log('Label data:', {
+      id: label.id,
+      sender_name: label.sender_name,
+      label_size: label.label_size,
+      shipping_code: label.shipping_code
+    })
+    
+    return {
+      ...label,
+      display_name: label.recipient_name ? 
+        `${label.sender_name} → ${label.recipient_name}` : 
+        label.sender_name || 'Label',
+      shipping_code: label.shipping_code ? label.shipping_code.toUpperCase() : '(Tanpa Resi)'
+    }
+  })
   
-  const shippingLabels = shippingStore.shippingLabels.map(label => ({
-    ...label,
-    type: 'shipping',
-    display_name: `${label.sender_name} → ${label.recipient_name}`,
-    shipping_code: label.shipping_code || '(Tanpa Resi)'
-  }))
-  
-  // Gabungkan dan urutkan berdasarkan tanggal terbaru
-  const allLabels = [...simpleLabels, ...shippingLabels]
-  return allLabels
+  // Urutkan berdasarkan tanggal terbaru
+  return shippingLabels
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 })
 
@@ -475,13 +466,8 @@ const handleActionCommand = (command, label) => {
 
 const printLabel = async (label) => {
   try {
-    let result
-    // Check label type and use appropriate store method
-    if (label.type === 'shipping') {
-      result = await shippingStore.getShippingLabelForPrint(label.id)
-    } else {
-      result = await labelStore.getLabelForPrint(label.id)
-    }
+    // Use shipping store for unified system
+    const result = await shippingStore.getShippingLabelForPrint(label.id)
     
     if (result.success) {
       // Detect mobile device
@@ -539,14 +525,9 @@ const printLabel = async (label) => {
 
 const printViaBrowser = async (label) => {
   try {
-    // Get the preview image URL based on label type
+    // Get the preview image URL using shipping store (unified system)
     const token = userStore.token
-    let imageUrl
-    if (label.type === 'shipping') {
-      imageUrl = `${api.defaults.baseURL}/shipping-labels/preview/${label.id}?token=${token}`
-    } else {
-      imageUrl = `${api.defaults.baseURL}/labels/preview/${label.id}?token=${token}`
-    }
+    const imageUrl = `${api.defaults.baseURL}/shipping-labels/preview/${label.id}?token=${token}`
     
     // Detect if mobile for different layout
     const isMobileDevice = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
@@ -617,12 +598,13 @@ const printViaBrowser = async (label) => {
     // Add body content
     printWindow.document.write('<div class="print-container">')
     printWindow.document.write('<div class="label-info">')
-    printWindow.document.write(`<h2>🏷️ Label ${label.type === 'shipping' ? 'Pengiriman' : 'Sederhana'}</h2>`)
+    printWindow.document.write(`<h2>🏷️ Label Pengiriman (${label.label_size || '58mm'})</h2>`)
     printWindow.document.write(`<p><strong>Kode:</strong> ${labelCode}</p>`)
     printWindow.document.write(`<p><strong>Pengirim:</strong> ${label.sender_name || 'Tidak ada'}</p>`)
-    if (label.type === 'shipping' && label.recipient_name) {
+    if (label.recipient_name) {
       printWindow.document.write(`<p><strong>Penerima:</strong> ${label.recipient_name}</p>`)
     }
+    printWindow.document.write(`<p><strong>Ukuran:</strong> ${label.label_size || '58mm'}</p>`)
     printWindow.document.write(`<p><strong>Tanggal:</strong> ${new Date(label.created_at).toLocaleDateString('id-ID')}</p>`)
     printWindow.document.write('</div>')
     
@@ -693,12 +675,8 @@ const printViaBrowser = async (label) => {
 const downloadLabel = async (label) => {
   try {
     const token = userStore.token
-    let imageUrl
-    if (label.type === 'shipping') {
-      imageUrl = `${api.defaults.baseURL}/shipping-labels/preview/${label.id}?token=${token}`
-    } else {
-      imageUrl = `${api.defaults.baseURL}/labels/preview/${label.id}?token=${token}`
-    }
+    // Use shipping store endpoint (unified system)
+    const imageUrl = `${api.defaults.baseURL}/shipping-labels/preview/${label.id}?token=${token}`
     
     // Create download link
     const link = document.createElement('a')
@@ -724,12 +702,8 @@ const previewLabel = async (label) => {
     
     ElMessage.info('Memuat preview label...')
     
-    // Get preview URL based on label type
-    if (label.type === 'shipping') {
-      previewImageUrl.value = await shippingStore.getPreviewUrl(label.id)
-    } else {
-      previewImageUrl.value = await labelStore.getPreviewUrl(label.id)
-    }
+    // Get preview URL using shipping store (unified system)
+    previewImageUrl.value = await shippingStore.getPreviewUrl(label.id)
     
     const labelCode = label.shipping_code || 'Label'
     ElMessage.success(`Preview label ${labelCode} berhasil dimuat`)
@@ -746,11 +720,10 @@ const handleImageError = () => {
 
 const refreshLabels = async () => {
   try {
-    // Fetch both simple labels and shipping labels
-    const simpleResult = await labelStore.fetchLabels()
+    // Fetch only shipping labels (unified system)
     const shippingResult = await shippingStore.fetchShippingLabels()
     
-    if (simpleResult.success && shippingResult.success) {
+    if (shippingResult.success) {
       ElMessage.success('Daftar label berhasil diperbarui')
     } else {
       ElMessage.error('Gagal memperbarui daftar label')
@@ -766,11 +739,8 @@ onMounted(() => {
     userStore.getCurrentUser()
   }
   
-  // Load both types of labels if user is authenticated
+  // Load shipping labels (unified system) if user is authenticated
   if (userStore.isAuthenticated) {
-    if (labelStore.labels.length === 0) {
-      labelStore.fetchLabels()
-    }
     if (shippingStore.shippingLabels.length === 0) {
       shippingStore.fetchShippingLabels()
     }
@@ -811,14 +781,8 @@ const deleteLabel = async (label) => {
       }
     )
     
-    let result
-    
-    // Delete based on label type
-    if (label.type === 'shipping') {
-      result = await shippingStore.deleteShippingLabel(label.id)
-    } else {
-      result = await labelStore.deleteLabel(label.id)
-    }
+    // Delete shipping label (unified system)
+    const result = await shippingStore.deleteShippingLabel(label.id)
     
     if (result.success) {
       ElMessage.success(`Label "${labelCode}" berhasil dihapus!`)
@@ -857,61 +821,19 @@ const bulkDeleteLabels = async () => {
       }
     )
     
-    // Separate labels by type for bulk operations
-    const simpleLabels = selectedLabels.value.filter(label => label.type === 'simple')
-    const shippingLabels = selectedLabels.value.filter(label => label.type === 'shipping')
-    
-    let totalSuccess = 0
-    let totalErrors = 0
-    const allErrors = []
-    
-    // Bulk delete simple labels
-    if (simpleLabels.length > 0) {
-      const simpleIds = simpleLabels.map(label => label.id)
-      const result = await labelStore.bulkDeleteLabels(simpleIds)
-      
-      if (result.success) {
-        totalSuccess += result.results.deleted_count
-        totalErrors += result.results.failed_count
-        if (result.results.errors.length > 0) {
-          allErrors.push(...result.results.errors)
-        }
-      } else {
-        totalErrors += simpleLabels.length
-        allErrors.push(`Simple labels: ${result.error}`)
-      }
-    }
-    
-    // Bulk delete shipping labels  
-    if (shippingLabels.length > 0) {
-      const shippingIds = shippingLabels.map(label => label.id)
-      const result = await shippingStore.bulkDeleteShippingLabels(shippingIds)
-      
-      if (result.success) {
-        totalSuccess += result.results.deleted_count
-        totalErrors += result.results.failed_count
-        if (result.results.errors.length > 0) {
-          allErrors.push(...result.results.errors)
-        }
-      } else {
-        totalErrors += shippingLabels.length
-        allErrors.push(`Shipping labels: ${result.error}`)
-      }
-    }
+    // Bulk delete shipping labels (unified system)
+    const labelIds = selectedLabels.value.map(label => label.id)
+    const result = await shippingStore.bulkDeleteShippingLabels(labelIds)
     
     // Clear selection after deletion attempt
     selectedLabels.value = []
     
     // Show results
-    if (totalSuccess === labelCount) {
-      ElMessage.success(`${totalSuccess} label berhasil dihapus!`)
-    } else if (totalSuccess > 0) {
-      ElMessage.warning(`${totalSuccess} label berhasil dihapus, ${totalErrors} label gagal dihapus`)
-      if (allErrors.length > 0) {
-        console.error('Delete errors:', allErrors)
-      }
+    if (result.success) {
+      const deleted = result.results.deleted_count || labelIds.length
+      ElMessage.success(`${deleted} label berhasil dihapus!`)
     } else {
-      ElMessage.error(`Gagal menghapus semua label. Error: ${allErrors.slice(0, 3).join(', ')}${allErrors.length > 3 ? '...' : ''}`)
+      ElMessage.error(`Gagal menghapus label: ${result.error}`)
     }
     
   } catch (error) {
@@ -943,31 +865,38 @@ const handleCommand = (command) => {
 </script>
 
 <style scoped>
-.dashboard-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 10px;
+/* Frozen Header Styles */
+.frozen-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  z-index: 1000;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
-.user-header {
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 0;
 }
 
-.user-info h3 {
-  margin: 0 0 5px 0;
-  font-size: 20px;
-}
-
-.user-info p {
+.app-title h3 {
   margin: 0;
-  opacity: 0.9;
-  font-size: 14px;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
 }
 
-.user-profile {
+.profile-section {
   display: flex;
   align-items: center;
 }
@@ -975,26 +904,110 @@ const handleCommand = (command) => {
 .profile-trigger {
   display: flex;
   align-items: center;
-  gap: 8px;
   cursor: pointer;
-  padding: 5px 10px;
-  border-radius: 20px;
-  transition: background-color 0.3s;
+  padding: 4px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
 }
 
 .profile-trigger:hover {
   background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
 }
 
-.username {
-  font-weight: 500;
+/* Profile Dropdown Styles */
+:deep(.profile-dropdown) {
+  min-width: 220px;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e4e7ed;
+  overflow: hidden;
+}
+
+:deep(.user-info-item) {
+  padding: 16px !important;
+  background: linear-gradient(135deg, #f8f9fa, #ffffff);
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.user-info-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.user-details {
+  margin-top: 4px;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #303133;
   font-size: 14px;
+  margin-bottom: 2px;
 }
 
-.dropdown-icon {
+.user-email {
   font-size: 12px;
-  transition: transform 0.3s;
+  color: #909399;
 }
+
+:deep(.menu-item) {
+  padding: 12px 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  transition: all 0.3s ease;
+}
+
+:deep(.menu-item:hover) {
+  background-color: #f5f7fa;
+  color: #409EFF;
+}
+
+:deep(.logout-item:hover) {
+  background-color: #fef0f0;
+  color: #F56C6C;
+}
+
+.menu-icon {
+  margin-right: 10px;
+  font-size: 16px;
+}
+
+:deep(.menu-item span) {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 80px 10px 10px 10px; /* Add top padding for frozen header */
+}
+
+/* Global smooth scrolling */
+:deep(html) {
+  scroll-behavior: smooth;
+}
+
+/* Add subtle entrance animation */
+.dashboard-container {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
 
 /* Action button with arrow down styling */
 .el-table .el-dropdown .el-button {
@@ -1023,8 +1036,22 @@ const handleCommand = (command) => {
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {
+  .frozen-header .header-content {
+    padding: 10px 15px;
+  }
+  
+  .app-title h3 {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  
+  .profile-trigger .el-avatar {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  
   .dashboard-container {
-    padding: 5px;
+    padding: 70px 5px 5px 5px; /* Adjust top padding for mobile header */
     margin: 0;
     max-width: 100%;
   }
@@ -1050,21 +1077,7 @@ const handleCommand = (command) => {
     padding: 10px !important;
   }
   
-  .user-info h3 {
-    font-size: 16px;
-  }
-  
-  .user-info p {
-    font-size: 12px;
-  }
-  
-  .username {
-    display: none; /* Hide username on mobile to save space */
-  }
-  
-  .user-header {
-    padding: 8px 0;
-  }
+
   
   .card-header {
     flex-direction: column;
@@ -1174,16 +1187,17 @@ const handleCommand = (command) => {
 }
 
 @media (max-width: 480px) {
+  .frozen-header .header-content {
+    padding: 8px 10px;
+  }
+  
+  .app-title h3 {
+    font-size: 12px;
+    line-height: 1.2;
+  }
+  
   .dashboard-container {
-    padding: 3px;
-  }
-  
-  .user-info h3 {
-    font-size: 14px;
-  }
-  
-  .user-info p {
-    font-size: 11px;
+    padding: 65px 3px 3px 3px;
   }
   
   .header-actions {
