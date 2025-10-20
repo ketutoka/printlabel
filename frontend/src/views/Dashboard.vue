@@ -518,144 +518,100 @@ const printViaBrowser = async (label) => {
     // Get the preview image URL using shipping store (unified system)
     const token = userStore.token
     const imageUrl = `${api.defaults.baseURL}/shipping-labels/preview/${label.id}?token=${token}`
-    
-    // Detect if mobile for different layout
-    const isMobileDevice = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    
-    // Create a new window for printing
-    const printWindow = window.open('', '_blank')
     const labelCode = label.shipping_code || 'Label'
     
-    // Write basic HTML structure
-    printWindow.document.write('<!DOCTYPE html>')
-    printWindow.document.write('<html><head>')
-    printWindow.document.write(`<title>Print Label - ${labelCode}</title>`)
-    printWindow.document.write('<meta name="viewport" content="width=device-width, initial-scale=1.0">')
+    // Create hidden print element in current page
+    const printElement = document.createElement('div')
+    printElement.id = 'hiddenPrintElement'
+    printElement.style.position = 'absolute'
+    printElement.style.left = '-9999px'
+    printElement.style.top = '0'
+    printElement.style.width = '58mm'
+    printElement.style.height = 'auto'
     
-    // Add CSS styles
-    const styles = `
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        @page { margin: 0; size: 58mm 100mm; }
-        html, body { margin: 0; padding: 0; background: white; font-family: Arial, sans-serif; }
-        .print-container {
-          display: flex; flex-direction: column; align-items: center;
-          justify-content: ${isMobileDevice ? 'flex-start' : 'center'};
-          min-height: 100vh; padding: ${isMobileDevice ? '20px' : '2mm'};
+    // Create CSS for print styling
+    const printStyles = `
+      <style media="print">
+        @page { 
+          margin: 0 !important; 
+          size: ${label.label_size || '58mm'} auto !important; 
         }
-        .label-info {
-          text-align: center; margin-bottom: 20px;
-          display: ${isMobileDevice ? 'block' : 'none'};
+        
+        body * {
+          visibility: hidden;
         }
-        .label-info h2 { color: #409EFF; margin-bottom: 10px; font-size: 18px; }
-        .label-info p { margin: 5px 0; color: #666; font-size: 14px; }
-        img { max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .mobile-print-buttons {
-          display: ${isMobileDevice ? 'flex' : 'none'};
-          flex-direction: row; gap: 15px; margin: 20px 0; justify-content: center; flex-wrap: wrap;
+        
+        #hiddenPrintElement, #hiddenPrintElement * {
+          visibility: visible;
         }
-        .print-button, .download-button { 
-          padding: 12px 24px; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; 
-          cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; 
-          gap: 8px; transition: all 0.3s ease; min-width: 120px; justify-content: center; 
+        
+        #hiddenPrintElement {
+          position: absolute !important;
+          left: 0 !important;
+          top: 0 !important;
+          width: ${label.label_size === '80mm' ? '80mm' : '58mm'} !important;
+          max-width: ${label.label_size === '80mm' ? '80mm' : '58mm'} !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          background: white !important;
         }
-        .print-button { background: linear-gradient(135deg, #409EFF, #66b3ff); color: white; box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3); }
-        .download-button { background: linear-gradient(135deg, #67C23A, #85ce61); color: white; box-shadow: 0 4px 12px rgba(103, 194, 58, 0.3); }
-        .print-instructions {
-          display: ${isMobileDevice ? 'block' : 'none'};
-          margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #409EFF; 
-          font-size: 14px; line-height: 1.6; color: #555; max-width: 400px;
-        }
-        @media print {
-          @page { margin: 0 !important; size: 58mm auto !important; }
-          html, body { width: 58mm !important; max-width: 58mm !important; margin: 0 !important; padding: 0 !important; background: white !important; font-size: 12px !important; }
-          .mobile-print-buttons, .print-instructions, .label-info { display: none !important; }
-          .print-container { min-height: auto !important; height: auto !important; padding: 1mm !important; margin: 0 !important; justify-content: flex-start !important; align-items: center !important; width: 58mm !important; max-width: 58mm !important; box-sizing: border-box !important; }
-          img { width: 56mm !important; max-width: 56mm !important; height: auto !important; border: none !important; padding: 0 !important; margin: 0 auto !important; page-break-inside: avoid !important; object-fit: contain !important; display: block !important; box-sizing: border-box !important; }
-        }
-        @media screen and (max-width: 768px) {
-          body { width: 100vw !important; max-width: 100vw !important; }
-          .print-container { padding: 15px; width: 100% !important; max-width: 100% !important; min-height: auto; }
-          img { max-width: 280px; width: 100%; }
-          .mobile-print-buttons { flex-direction: column; gap: 8px; }
-          .print-button, .download-button { width: 100%; max-width: 280px; padding: 14px 20px; font-size: 16px; }
+        
+        #hiddenPrintElement img {
+          width: ${label.label_size === '80mm' ? '78mm' : '56mm'} !important;
+          max-width: ${label.label_size === '80mm' ? '78mm' : '56mm'} !important;
+          height: auto !important;
+          border: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          display: block !important;
         }
       </style>
     `
-    printWindow.document.write(styles)
-    printWindow.document.write('</head><body>')
     
-    // Add body content
-    printWindow.document.write('<div class="print-container">')
-    printWindow.document.write('<div class="label-info">')
-    printWindow.document.write(`<h2>🏷️ Label Pengiriman (${label.label_size || '58mm'})</h2>`)
-    printWindow.document.write(`<p><strong>Kode:</strong> ${labelCode}</p>`)
-    printWindow.document.write(`<p><strong>Pengirim:</strong> ${label.sender_name || 'Tidak ada'}</p>`)
-    if (label.recipient_name) {
-      printWindow.document.write(`<p><strong>Penerima:</strong> ${label.recipient_name}</p>`)
+    // Add styles to head if not already present
+    if (!document.getElementById('printStyles')) {
+      const styleElement = document.createElement('div')
+      styleElement.id = 'printStyles'
+      styleElement.innerHTML = printStyles
+      document.head.appendChild(styleElement)
     }
-    printWindow.document.write(`<p><strong>Ukuran:</strong> ${label.label_size || '58mm'}</p>`)
-    printWindow.document.write(`<p><strong>Tanggal:</strong> ${new Date(label.created_at).toLocaleDateString('id-ID')}</p>`)
-    printWindow.document.write('</div>')
     
-    // Add image with onload handler
-    const onloadHandler = isMobileDevice 
-      ? "console.log('Image loaded');" 
-      : "window.print(); setTimeout(function() { window.close(); }, 1000);"
+    // Create image element
+    const img = document.createElement('img')
+    img.src = imageUrl
+    img.alt = `Label ${labelCode}`
+    img.style.width = '100%'
+    img.style.height = 'auto'
     
-    printWindow.document.write(`<img src="${imageUrl}" alt="Label ${labelCode}" onload="setTimeout(function() { ${onloadHandler} }, 500);" onerror="alert('Error loading image');" />`)
+    // Add image to print element
+    printElement.appendChild(img)
     
-    // Add mobile buttons
-    printWindow.document.write('<div class="mobile-print-buttons">')
-    printWindow.document.write('<button class="print-button" onclick="window.print()">🖨️ Cetak Label</button>')
-    printWindow.document.write(`<a href="${imageUrl}" download="${labelCode}.png" class="download-button">⬇️ Download PNG</a>`)
-    printWindow.document.write('</div>')
+    // Add to body
+    document.body.appendChild(printElement)
     
-    // Add instructions
-    printWindow.document.write('<div class="print-instructions">')
-    printWindow.document.write('<strong>📱 Cara Print:</strong><br>')
-    printWindow.document.write('1. Tekan tombol "Cetak Label" di atas<br>')
-    printWindow.document.write('2. Pilih printer yang tersedia<br>')
-    printWindow.document.write('3. Pastikan ukuran kertas sesuai (A4 atau 58mm untuk thermal)<br>')
-    printWindow.document.write('4. Klik Print untuk mencetak label<br>')
-    printWindow.document.write('5. Atau download PNG untuk print dari aplikasi lain')
-    printWindow.document.write('</div>')
-    printWindow.document.write('</div>')
+    // Wait for image to load then print
+    img.onload = () => {
+      setTimeout(() => {
+        window.print()
+        
+        // Clean up after print
+        setTimeout(() => {
+          if (printElement && printElement.parentNode) {
+            printElement.parentNode.removeChild(printElement)
+          }
+        }, 1000)
+      }, 500)
+    }
     
-    // Add optimization script
-    printWindow.document.write('<script>')
-    printWindow.document.write('function optimizePrint() {')
-    printWindow.document.write('  window.addEventListener("beforeprint", function() {')
-    printWindow.document.write('    document.body.style.width = "58mm";')
-    printWindow.document.write('    document.body.style.maxWidth = "58mm";')
-    printWindow.document.write('    document.body.style.overflow = "hidden";')
-    printWindow.document.write('    var container = document.querySelector(".print-container");')
-    printWindow.document.write('    if (container) {')
-    printWindow.document.write('      container.style.width = "58mm";')
-    printWindow.document.write('      container.style.maxWidth = "58mm";')
-    printWindow.document.write('    }')
-    printWindow.document.write('    var img = document.querySelector("img");')
-    printWindow.document.write('    if (img) {')
-    printWindow.document.write('      img.style.width = "56mm";')
-    printWindow.document.write('      img.style.maxWidth = "56mm";')
-    printWindow.document.write('      img.style.height = "auto";')
-    printWindow.document.write('    }')
-    printWindow.document.write('  });')
-    printWindow.document.write('  window.addEventListener("afterprint", function() {')
-    printWindow.document.write('    document.body.style.width = "";')
-    printWindow.document.write('    document.body.style.maxWidth = "";')
-    printWindow.document.write('    document.body.style.overflow = "";')
-    printWindow.document.write('  });')
-    printWindow.document.write('}')
-    printWindow.document.write('document.addEventListener("DOMContentLoaded", optimizePrint);')
-    printWindow.document.write('if (document.readyState === "complete") { optimizePrint(); }')
-    printWindow.document.write('</' + 'script>')
+    img.onerror = () => {
+      ElMessage.error('Gagal memuat gambar label')
+      if (printElement && printElement.parentNode) {
+        printElement.parentNode.removeChild(printElement)
+      }
+    }
     
-    printWindow.document.write('</' + 'body>')
-    printWindow.document.write('</' + 'html>')
-    printWindow.document.close()
+    ElMessage.success(`Label ${labelCode} siap dicetak!`)
     
-    ElMessage.success(`Label ${labelCode} dikirim ke printer!`)
   } catch (error) {
     ElMessage.error('Gagal mencetak label')
     console.error('Print error:', error)

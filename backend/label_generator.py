@@ -192,14 +192,14 @@ def generate_shipping_label(sender_name: str, sender_phone: str, recipient_name:
         font_large = 15
         font_medium = 13
         font_small = 11
-        qr_size = 80
+        qr_size = 100
         max_chars = 38  # More characters for wider label
     else:  # Default 58mm
         label_width = 203  # 58mm ≈ 203px at 203 DPI
         font_large = 13
         font_medium = 11
         font_small = 10
-        qr_size = 60
+        qr_size = 80
         max_chars = 28
 
     label_height = 350  # Dynamic height based on content
